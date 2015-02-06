@@ -1,0 +1,49 @@
+<!--
+    Oozie coordinator app to watch for a dump from Ballista.
+  
+    This Oozie coordinator takes the following parameters:
+
+    - region         - the region to process data from. The region name is used
+                       as part of a directory path where Ballista is expected
+                       to write files in. 
+    - emailToAddress - the email address to send error notifications. 
+-->
+<coordinator-app name="FeedsImport-${region}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
+   <controls>
+       <!-- materialized action should wait forever -->
+       <timeout>-1</timeout>
+   </controls>
+   <datasets>
+      <dataset name="feeds_dump" frequency="${coord:minutes(15)}" initial-instance="${startTime}" timezone="UTC">
+         <uri-template>${nameNode}/cloudfeeds/feeds_dump/${region}/${YEAR}-${MONTH}-${DAY}</uri-template>
+         <done-flag>_SUCCESS</done-flag>
+      </dataset>
+   </datasets>
+   <input-events>
+      <data-in name="coordInput1" dataset="feeds_dump">
+         <!--  The "date" directory should be the yesterday's date, as Ballista runs to dump data
+               from the previous day. This is how you get the previous date.
+         -->
+         <instance>${coord:current(-1)}</instance>
+      </data-in>
+   </input-events>
+   <action>
+      <workflow>
+         <app-path>${nameNode}/cloudfeeds/usmu/feedsImport-wf.xml</app-path>
+         <configuration>
+             <property>
+                 <name>region</name>
+                 <value>${region}</value>
+             </property>
+             <property>
+                 <name>emailToAddress</name>
+                 <value>${emailToAddress}</value>
+             </property>
+             <property>
+                 <name>dateToProcess</name>
+                 <value>${coord:formatTime(coord:dateOffset(coord:nominalTime(), -1, 'DAY'),"yyyy-MM-dd")}</value>
+             </property>
+         </configuration>
+      </workflow>
+   </action>     
+</coordinator-app>
