@@ -1,0 +1,130 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url 'https://oss.sonatype.org/content/groups/public' }
+    }
+    dependencies {
+        classpath 'com.github.townsfolk:gradle-release:1.2'
+        classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.0.3'
+        classpath "org.flywaydb:flyway-gradle-plugin:3.1"
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'os-package-base'
+
+archivesBaseName = custom.parentProject + '-' + project.name
+
+// our package name for the RPM
+def package_name = 'cloudfeeds-nabu-usmu'
+// our app name used by the rpm stuff
+def app_name = 'usmu'
+// clean version number with no -SNAPSHOT
+def version_clean = version.minus("-SNAPSHOT")
+// version number with -SNAPSHOT
+def version_snapshot = version_clean + '-SNAPSHOT'
+// path where our jars will be put on the system via the rpm/deb
+def prefix_path = '/usr/share/' + app_name
+// path where our configs will be put on the system via the rpm/deb
+def config_path = '/etc/' + app_name
+// user for the service, created via the preinstall.sh script
+def app_user = 'cloudfeeds'
+// group for the service, created via the preinstall.sh script
+def app_group = 'cloudfeeds'
+
+dependencies {
+}
+
+
+// task to create one uber executable jar
+task uberjar(type: Jar) {
+    baseName = custom.parentProject + '-' + project.name
+
+    from configurations.runtime.asFileTree.files.collect { zipTree(it) }
+}
+
+// defaults for rpm/deb packaging
+ospackage {
+    os = LINUX
+    packageName = package_name
+    version = version_clean
+    release = 1
+    packageGroup = 'Application/System'
+    packageDescription = 'This is the Cloud Feeds Archiving'
+    url = 'http://github.com/rackerlabs/cloudfeeds-nabu'
+
+    // pre and post scriptlets
+    //preInstall file('src/main/resources/preinstall.sh')
+    //postInstall file('src/main/resources/postinstall.sh')
+
+    directory(config_path, 755)
+    directory(prefix_path, 755)
+    directory(prefix_path + '/lib', 755)
+    directory(prefix_path + '/bin', 755)
+
+    // pull our configs and wadl from src/main/resources
+    from('src/main/resources') {
+        into config_path
+        exclude 'preferences-service.init' // exclude init script
+        exclude '*.sh' // exclude pre/post scripts
+        // set permissions
+        user app_user
+        permissionGroup app_group
+        fileMode 0644
+        fileType CONFIG | NOREPLACE
+    }
+
+    into prefix_path
+
+    // pull our init script
+    from('src/main/resources') {
+        into 'bin'
+        include 'preferences-service.init'
+        user app_user
+        permissionGroup app_group
+    }
+
+    // collect our jars
+    from('build/libs') {
+        into 'lib'
+        user app_user
+        permissionGroup app_group
+    }
+}
+
+// task to create RPM
+task buildRpm(type: Rpm, dependsOn: 'uberjar') {
+    // this task inherits defaults from the ospackage section
+
+    baseName = custom.parentProject + '-' + project.name
+
+    // the init script uses daemonize, require it
+    requires('daemonize')
+
+    // symlink for the init script
+    link('/etc/init.d/' + app_name, prefix_path + '/bin/preferences-service.init')
+}
+
+artifacts {
+    archives(buildRpm) {
+        name   custom.parentProject + '-' + project.name
+        type   'rpm'
+        builtBy buildRpm
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId    = custom.group
+            pom.artifactId = custom.parentProject + '-' + project.name
+            pom.version    = project.version
+            println("usmu: artifactId=" + pom.artifactId)
+        }
+    }
+}
+
+// 'gradle release' will also upload release to Nexus
+uploadArchives.dependsOn   uberjar

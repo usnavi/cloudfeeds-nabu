@@ -1,0 +1,106 @@
+
+allprojects {
+    repositories {
+        mavenLocal()
+        maven { url "https://maven.research.rackspacecloud.com/content/repositories/snapshots/" }
+        maven { url "https://maven.research.rackspacecloud.com/content/repositories/releases/" }
+        mavenCentral()
+        jcenter()
+    }
+
+    // If it doesn't have parent (i.e: it's the parent project itself),
+    // then load the common.gradle from current directory. Subprojects
+    // will load the common.gradle from the subprojects{} section. 
+    if ( !project.parent ) {
+        apply from: 'common.gradle'
+    } 
+    apply plugin:   'maven'
+
+    group   = custom.group
+
+    defaultTasks  'clean', 'build'
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                // nexusUsername and nexusPassword are passed in via -P option when gradle is run
+                repository(url: "https://maven.research.rackspacecloud.com/content/repositories/releases/") {
+                    authentication(userName: nexusUsername, password: nexusPassword)
+                }
+                snapshotRepository(url: "https://maven.research.rackspacecloud.com/content/repositories/snapshots/") {
+                    authentication(userName: nexusUsername, password: nexusPassword)
+                }
+            }
+        }
+    }
+}
+
+subprojects {
+    // this only works if the subprojects don't contain subprojects
+    apply from: '../common.gradle'
+}
+
+apply plugin: 'release'
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url 'https://oss.sonatype.org/content/groups/public' }
+    }
+    dependencies {
+        classpath 'com.github.townsfolk:gradle-release:1.2'
+    }
+}
+
+task writeNewPom << {
+    pom {
+        project {
+            name          'Cloud Feeds Archiving solution'
+            description   'A set of components that ...'
+            url           'http://github.com/rackerlabs/cloudfeeds-nabu'
+            inceptionYear '2015'
+        }
+        scm {
+            url        'https://github.com/rackerlabs/cloudfeeds-nabu'
+            connection 'scm:git:ssh://git@github.com/rackerlabs/cloudfeeds-nabu.git'
+        }
+    }.writeTo("$buildDir/newpom.xml")
+}
+
+task test {
+    dependsOn task(':usmu:test')
+}
+
+artifacts {
+    //def app_artifact = custom.parentProject + '-app-' + project.version.minus('-SNAPSHOT') + '-1.noarch.rpm'
+    //archives file: file('app/build/distributions/' + app_artifact), name: app_artifact, type: 'rpm', classifier: 'app'
+
+    //def db_artifact = custom.parentProject + '-db-' + project.version.minus('-SNAPSHOT') + '.zip'
+    //archives file: file('db/build/distributions/' + db_artifact), name: db_artifact, type: 'zip', classifier: 'db'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId    = project.group
+            pom.artifactId = project.name
+            pom.version    = project.version.minus('-SNAPSHOT')
+            //println('main: groupId=' + pom.groupId)
+            //println('main: artifactId=' + pom.artifactId)
+            //println('main: version=' + pom.version)
+        }
+    }
+}
+
+createReleaseTag.dependsOn uploadArchives
+
+release {
+    failOnPublishNeeded = false
+    failOnCommitNeeded = false
+    failOnUnversionedFiles = false
+    tagPrefix = 'cloudfeeds-nabu'
+    // for testing on dev boxes
+    //git.requireBranch = ''
+}
+
