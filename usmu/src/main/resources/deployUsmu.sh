@@ -1,8 +1,10 @@
 #!/bin/sh
+#
+# This script is used to copy necessary Usmu Coordinator and Workflow files into
+# HDFS
 
 HDFS_DEPLOY_DIR=/cloudfeeds/usmu
-#USMU_LOCAL_DIR=/etc/cloudfeeds-nabu/usmu
-USMU_LOCAL_DIR=./
+USMU_LOCAL_DIR=/etc/cloudfeeds-nabu/usmu
 
 hadoop fs -mkdir -p ${HDFS_DEPLOY_DIR}/
 
