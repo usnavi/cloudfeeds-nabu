@@ -1,8 +1,0 @@
-#!/bin/sh
-
-for dc in ORD DFW
-do
-    hadoop fs -mkdir -p /cloudfeeds/feeds_dump/${dc}/
-    hadoop fs -mkdir -p /cloudfeeds/feeds_dump/${dc}/2015-02-05
-    hadoop fs -copyFromLocal -f import.txt _SUCCESS /cloudfeeds/feeds_dump/${dc}/2015-02-05/
-done
