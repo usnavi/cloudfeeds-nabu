@@ -7,6 +7,14 @@
                        as part of a directory path where Ballista is expected
                        to write files in. 
     - emailToAddress - the email address to send error notifications. 
+    - startTime      - the first day that the coordinator needs to materialize an
+                       Usmu job/workflow. If startTime is "2015-02-04T00:00Z", then
+                       a job that watches directory 2015-02-03 will materialize.
+                       The format should be "yyyy-MM-ddThh:mmZ".
+    - endTime        - the last day that the coordinator will materialize an Usmu
+                       job/workflow. This is required parameter in Oozie. So we
+                       will just need to set this to something arbitrarily long
+                       in the future. The format should be "yyyy-MM-ddThh:mmZ".
 -->
 <coordinator-app name="FeedsImport-${region}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
    <controls>
