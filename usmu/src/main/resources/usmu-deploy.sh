@@ -4,7 +4,7 @@
 # HDFS
 
 HDFS_DEPLOY_DIR=/cloudfeeds/usmu
-USMU_LOCAL_DIR=/etc/cloudfeeds-nabu/usmu
+USMU_LOCAL_DIR=/opt/cloudfeeds-nabu/usmu
 
 hadoop fs -mkdir -p ${HDFS_DEPLOY_DIR}/
 
