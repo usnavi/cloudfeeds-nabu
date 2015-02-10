@@ -16,12 +16,18 @@
                        will just need to set this to something arbitrarily long
                        in the future. The format should be "yyyy-MM-ddThh:mmZ".
 -->
-<coordinator-app name="FeedsImport-${region}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
+<coordinator-app name="FeedsImport-${region}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" 
+                 timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
    <controls>
-       <!-- materialized action should wait forever -->
-       <timeout>-1</timeout>
+       <!-- Materialized jobs should wait 22 hours (=1320 minutes) before timing out. 
+            They materialize in the hour specified in the ${startTime}, every day.
+       -->
+       <timeout>1320</timeout>
    </controls>
    <datasets>
+      <!-- Every 15 minutes, the coordinator will check if a materialize job can run
+           (i.e: the directory listed in uri-template exists)
+       -->
       <dataset name="feeds_dump" frequency="${coord:minutes(15)}" initial-instance="${startTime}" timezone="UTC">
          <uri-template>${nameNode}/cloudfeeds/feeds_dump/${region}/${YEAR}-${MONTH}-${DAY}</uri-template>
          <done-flag>_SUCCESS</done-flag>
