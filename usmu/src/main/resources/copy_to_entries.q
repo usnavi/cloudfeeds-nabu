@@ -2,6 +2,7 @@
 SET hive.exec.dynamic.partition=true;
 SET hive.exec.dynamic.partition.mode=nonstrict;
 
+-- This MUST match with what Ballista is exporting
 CREATE external TABLE IF NOT EXISTS ${INPUT_TABLE} (
        id bigint,
        entryid string,
