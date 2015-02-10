@@ -57,7 +57,7 @@ task writeNewPom << {
     pom {
         project {
             name          'Cloud Feeds Archiving solution'
-            description   'A set of components that ...'
+            description   'A set of components that archives Cloud Feeds events to Hadoop ecosystem and eventually to customer Cloud Files containers'
             url           'http://github.com/rackerlabs/cloudfeeds-nabu'
             inceptionYear '2015'
         }
@@ -73,11 +73,8 @@ task test {
 }
 
 artifacts {
-    //def app_artifact = custom.parentProject + '-app-' + project.version.minus('-SNAPSHOT') + '-1.noarch.rpm'
-    //archives file: file('app/build/distributions/' + app_artifact), name: app_artifact, type: 'rpm', classifier: 'app'
-
-    //def db_artifact = custom.parentProject + '-db-' + project.version.minus('-SNAPSHOT') + '.zip'
-    //archives file: file('db/build/distributions/' + db_artifact), name: db_artifact, type: 'zip', classifier: 'db'
+    def usmu_artifact = custom.parentProject + '-usmu-' + project.version.minus('-SNAPSHOT') + '-1.noarch.rpm'
+    archives file: file('usmu/build/distributions/' + usmu_artifact), name: usmu_artifact, type: 'rpm', classifier: 'usmu'
 }
 
 uploadArchives {
