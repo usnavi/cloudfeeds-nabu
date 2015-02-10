@@ -1,0 +1,18 @@
+-- This is the DDL of the entries table in Hive that
+-- stores all Cloud Feeds entries.
+--
+-- This MUST match with how the Spark job is reading
+-- the table.
+
+CREATE TABLE entries(
+    id bigint,
+    entryid string,
+    creationdate timestamp,
+    datelastupdated timestamp,
+    entrybody string,
+    categories string,
+    eventtype string,
+    tenantid string,
+    dc string )
+PARTITIONED BY( date string, feed string )
+STORED as ORC;
