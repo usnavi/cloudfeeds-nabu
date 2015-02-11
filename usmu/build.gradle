@@ -1,0 +1,122 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url 'https://oss.sonatype.org/content/groups/public' }
+    }
+    dependencies {
+        classpath 'com.github.townsfolk:gradle-release:1.2'
+        classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.0.3'
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'os-package-base'
+
+archivesBaseName = custom.parentProject + '-' + project.name
+
+// Our RPM configurations:
+//   package_name:    package name for the RPM
+//   app_name:        app name used by RPM
+//   version_clean:   version without -snapshot
+//   install_path:    directory where our files will be put on the file system
+//   config_path:     directory where our config files will be put on the system
+//   app_user:        the owner of all the files
+//   app_group:       the group ownership of all the files
+
+def package_name = 'cloudfeeds-nabu'
+def app_name = 'usmu'
+def version_clean = version.minus("-SNAPSHOT")
+def install_path = '/opt/' + package_name + '/' + app_name
+def config_path = '/etc/' + package_name + '/' + app_name
+def app_user = 'cloudfeeds'
+def app_group = 'cloudfeeds'
+
+dependencies {
+}
+
+
+// task to create one uber executable jar
+task uberjar(type: Jar) {
+    baseName = custom.parentProject + '-' + project.name
+
+    from configurations.runtime.asFileTree.files.collect { zipTree(it) }
+}
+
+// defaults for rpm/deb packaging
+ospackage {
+    os = LINUX
+    packageName = package_name + '-' + app_name
+    version = version_clean
+    release = 1
+    packageGroup = 'Application/System'
+    packageDescription = 'This is the Cloud Feeds Archiving package for Usmu, the component that reads in Postgres dump and inserts to Hive'
+    url = 'http://github.com/rackerlabs/cloudfeeds-nabu'
+
+    // pre and post scriptlets
+    preInstall file('src/main/resources/preinstall.sh')
+    //postInstall file('src/main/resources/postinstall.sh')
+
+    directory(config_path, 755)
+    directory(install_path, 755)
+    directory(install_path + '/bin', 755)
+
+    from('src/main/resources') {
+        into install_path
+        include '*-coord.xml'
+        include '*-wf.xml'
+        include '*.q'
+        // set permissions
+        user app_user
+        permissionGroup app_group
+        fileMode 0644
+        fileType CONFIG | NOREPLACE
+    }
+
+    from('src/main/resources') {
+        into install_path + '/bin'
+        include 'usmu-*.sh'
+        // set permissions
+        user app_user
+        permissionGroup app_group
+        fileMode 0755
+        fileType CONFIG | NOREPLACE
+    }
+
+    from('src/main/resources') {
+        into config_path
+        include '*.properties'
+        include 'hive-site.xml'
+        user app_user
+        permissionGroup app_group
+        fileMode 0644
+        fileType CONFIG | NOREPLACE
+    }
+}
+
+// task to create RPM
+task buildRpm(type: Rpm) {
+    // this task inherits defaults from the ospackage section
+    baseName = custom.parentProject + '-' + project.name
+}
+
+artifacts {
+    archives(buildRpm) {
+        name   custom.parentProject + '-' + project.name
+        type   'rpm'
+        builtBy buildRpm
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId    = custom.group
+            pom.artifactId = custom.parentProject + '-' + project.name
+            pom.version    = project.version
+            println("usmu: artifactId=" + pom.artifactId)
+        }
+    }
+}
+
