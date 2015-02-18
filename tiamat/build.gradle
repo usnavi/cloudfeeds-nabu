@@ -1,0 +1,143 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url 'https://oss.sonatype.org/content/groups/public' }
+        maven { url 'http://maven.research.rackspacecloud.com/content/groups/aggregate' }
+    }
+    dependencies {
+        classpath 'com.github.townsfolk:gradle-release:1.2'
+        classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.0.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.0'
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'scala'
+apply plugin: 'os-package-base'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+// required by shadowJar
+mainClassName = 'com.rackspace.feeds.archives.ArchiveToFiles'
+
+shadowJar {
+
+    dependencies {
+        exclude(dependency('org.scala-lang:scala-library:2.10.4'))
+        exclude(dependency('org.apache.spark:spark-core_2.10:1.1.1'))
+        exclude(dependency('org.apache.spark:spark-hive_2.10:1.1.1'))
+    }
+
+    relocate 'org.apache.http', 'shaded.org.apache.http'
+}
+
+archivesBaseName = custom.parentProject + '-' + project.name
+
+// Our RPM configurations:
+//   package_name:    package name for the RPM
+//   app_name:        app name used by RPM
+//   version_clean:   version without -snapshot
+//   install_path:    directory where our files will be put on the file system
+//   config_path:     directory where our config files will be put on the system
+//   app_user:        the owner of all the files
+//   app_group:       the group ownership of all the files
+
+def package_name = 'cloudfeeds-nabu'
+def app_name = 'tiamat'
+def version_clean = version.minus("-SNAPSHOT")
+def install_path = '/opt/' + package_name + '/' + app_name
+def config_path = '/etc/' + package_name + '/' + app_name
+def app_user = 'cloudfeeds'
+def app_group = 'cloudfeeds'
+
+dependencies {
+
+    compile 'org.scala-lang:scala-library:2.10.4'
+    compile 'org.apache.spark:spark-core_2.10:1.1.1'
+    compile 'org.apache.spark:spark-hive_2.10:1.1.1'
+    compile 'org.json4s:json4s-jackson_2.10:3.2.11'
+    compile 'org.apache.httpcomponents:httpclient:4.3'
+    compile 'joda-time:joda-time:2.7'
+    compile 'net.sf.saxon:Saxon-HE:9.4.0.6'
+}
+
+
+// defaults for rpm/deb packaging
+ospackage {
+    os = LINUX
+    packageName = package_name + '-' + app_name
+    version = version_clean
+    release = 1
+    packageGroup = 'Application/System'
+    packageDescription = 'This is the Cloud Feeds Archiving package for Tiamat, the spark job which archives feeds into Cloud Files'
+    url = 'http://github.com/rackerlabs/cloudfeeds-nabu'
+
+    // pre and post scriptlets
+    preInstall file('src/main/resources/preinstall.sh')
+    //postInstall file('src/main/resources/postinstall.sh')
+
+    directory(config_path, 755)
+    directory(install_path, 755)
+    directory(install_path + '/bin', 755)
+
+    /*
+    from('src/main/resources') {
+        into install_path
+        include '*-coord.xml'
+        include '*-wf.xml'
+        include '*.q'
+        // set permissions
+        user app_user
+        permissionGroup app_group
+        fileMode 0644
+        fileType CONFIG | NOREPLACE
+    }
+
+    from('src/main/resources') {
+        into install_path + '/bin'
+        include 'usmu-*.sh'
+        // set permissions
+        user app_user
+        permissionGroup app_group
+        fileMode 0755
+        fileType CONFIG | NOREPLACE
+    }
+
+    from('src/main/resources') {
+        into config_path
+        include '*.properties'
+        include 'hive-site.xml'
+        user app_user
+        permissionGroup app_group
+        fileMode 0644
+        fileType CONFIG | NOREPLACE
+    }
+    */
+}
+
+// task to create RPM
+task buildRpm(type: Rpm) {
+    // this task inherits defaults from the ospackage section
+    baseName = custom.parentProject + '-' + project.name
+}
+
+artifacts {
+    archives(buildRpm) {
+        name   custom.parentProject + '-' + project.name
+        type   'rpm'
+        builtBy buildRpm
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId    = custom.group
+            pom.artifactId = custom.parentProject + '-' + project.name
+            pom.version    = project.version
+            println("tiamat: artifactId=" + pom.artifactId)
+        }
+    }
+}
+
