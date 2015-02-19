@@ -1,7 +1,7 @@
 <!--
     Oozie workflow to execute the following actions:
 
-    1) Run Hive action "copy_to_entries", which will:
+    1) Run Hive action "load_prefs.q", which will:
        a) create an external table pointing to a directory where Ballista dumps data
        b) read from the external table and write to a Hive partitioned table
        c) drops the external table
@@ -10,16 +10,17 @@
 
     The workflow takes the following parameters:
     
-    - region         - the region to process data from. The region name is used
+    - watchDir       - the top level directory where <date> subdirectories
+                       containing data files are to be checked by this coordinated
                        as part of a directory path where Ballista is expected
                        to write files in. 
     - emailToAddress - the email address to send error notifications. 
-    - hdfsDumpDir    - this is the fully qualified HDFS path where the workflow
-                       needs to read exported data from Ballista
-                       and writes to Hive. For example:
-                          hdfs://myhadoop.cluster.host/cloudfeeds/feeds_dump/DFW/2015-02-17
+    - dateToProcess  - this is the date (in the format of yyyy-MM-dd) for which
+                       this workflow needs to grab exported data from Ballista
+                       and writes to Hive. The dateToProcess is also being used
+                       as a directory name.
 
-    The directory from which this workflow expects files from Ballista is:
+    The directory from which this workflow expects Postgres dump files is:
         ${watchDir}/${YEAR}-${MONTH}-${DAY} 
 -->
 <workflow-app name="usmu" 
@@ -27,23 +28,19 @@
 
   <parameters>
     <property>
-       <name>region</name>
+       <name>watchDir</name>
     </property>
     <property>
        <name>emailToAddress</name>
     </property>
     <property>
-       <name>hdfsDumpDir</name>
-    </property>
-    <property>
-      <name>hdfsWatchDir</name>
-      <value>${nameNode}${watchDir}/</value>
+       <name>dateToProcess</name>
     </property>
   </parameters>
 
-  <start to="copy_to_entries"/>
+  <start to="load_prefs"/>
 
-  <action name="copy_to_entries">
+  <action name="load_prefs">
     <hive xmlns="uri:oozie:hive-action:0.2">
       <job-tracker>${jobTracker}</job-tracker>
       <name-node>${nameNode}</name-node>
@@ -63,12 +60,13 @@
       <!--
            Hive script which must exist in workflow directory on HDFS.
       -->
-      <script>copy_to_entries.q</script>
+      <script>load_prefs.q</script>
+
       <!--
            Parameters referenced within Hive script.
       -->
-      <param>INPUT_TABLE=dailyfeedsdump_${region}</param>
-      <param>INPUT_LOCATION=${watchDir}/${replaceAll(hdfsDumpDir, hdfsWatchDir, "")}</param>
+      <param>INPUT_TABLE=dailyprefsdump</param>
+      <param>INPUT_LOCATION=${watchDir}/${dateToProcess}</param>
     </hive>
     
     <ok to="cleanup"/>
@@ -80,7 +78,7 @@
          <!--
          Someone or some process needs to purge these
          -->
-         <move source="${hdfsDumpDir}" target="${hdfsDumpDir}-${wf:id()}"/>
+         <move source="${nameNode}${watchDir}/${dateToProcess}" target="${nameNode}${watchDir}/${dateToProcess}-${wf:id()}"/>
      </fs>
      <ok to="end"/>
      <error to="sendEmailKill"/>

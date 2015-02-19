@@ -64,14 +64,13 @@ ospackage {
 
     from('src/main/resources') {
         into install_path
-        include '*-coord.xml'
+        include '*-coordinator.xml'
         include '*-wf.xml'
         include '*.q'
         // set permissions
         user app_user
         permissionGroup app_group
         fileMode 0644
-        fileType CONFIG | NOREPLACE
     }
 
     from('src/main/resources') {
@@ -81,7 +80,6 @@ ospackage {
         user app_user
         permissionGroup app_group
         fileMode 0755
-        fileType CONFIG | NOREPLACE
     }
 
     from('src/main/resources') {
