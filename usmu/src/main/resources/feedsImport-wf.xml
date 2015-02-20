@@ -19,8 +19,6 @@
                        and writes to Hive. For example:
                           hdfs://myhadoop.cluster.host/cloudfeeds/feeds_dump/DFW/2015-02-17
 
-    The directory from which this workflow expects files from Postgres DB dump is:
-        ${watchDir}/${YEAR}-${MONTH}-${DAY} 
 -->
 <workflow-app name="usmu" 
 	      xmlns="uri:oozie:workflow:0.4">

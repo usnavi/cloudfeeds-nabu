@@ -53,10 +53,6 @@
                  <value>${region}</value>
              </property>
              <property>
-                 <name>watchDir</name>
-                 <value>${watchDir}</value>
-             </property>
-             <property>
                  <name>emailToAddress</name>
                  <value>${emailToAddress}</value>
              </property>

@@ -10,31 +10,21 @@
 
     The workflow takes the following parameters:
     
-    - watchDir       - the top level directory where <date> subdirectories
-                       containing data files are to be checked by this coordinated
-                       as part of a directory path where Ballista is expected
-                       to write files in. 
     - emailToAddress - the email address to send error notifications. 
-    - dateToProcess  - this is the date (in the format of yyyy-MM-dd) for which
-                       this workflow needs to grab exported data from Ballista
-                       and writes to Hive. The dateToProcess is also being used
-                       as a directory name.
-
-    The directory from which this workflow expects Postgres dump files is:
-        ${watchDir}/${YEAR}-${MONTH}-${DAY} 
+    - hdfsDumpDir    - this is the fully qualified HDFS path where the workflow
+                       needs to read exported data from Postgres DB dump
+                       and writes to Hive. For example:
+                          hdfs://myhadoop.cluster.host/cloudfeeds/prefs_dump/DFW
 -->
 <workflow-app name="usmu" 
 	      xmlns="uri:oozie:workflow:0.4">
 
   <parameters>
     <property>
-       <name>watchDir</name>
-    </property>
-    <property>
        <name>emailToAddress</name>
     </property>
     <property>
-       <name>dateToProcess</name>
+       <name>hdfsDumpDir</name>
     </property>
   </parameters>
 
@@ -66,7 +56,7 @@
            Parameters referenced within Hive script.
       -->
       <param>INPUT_TABLE=dailyprefsdump</param>
-      <param>INPUT_LOCATION=${watchDir}/${dateToProcess}</param>
+      <param>INPUT_LOCATION=${replaceAll(hdfsDumpDir, nameNode, "")}</param>
     </hive>
     
     <ok to="cleanup"/>
@@ -78,7 +68,7 @@
          <!--
          Someone or some process needs to purge these
          -->
-         <move source="${nameNode}${watchDir}/${dateToProcess}" target="${nameNode}${watchDir}/${dateToProcess}-${wf:id()}"/>
+         <move source="${hdfsDumpDir}" target="${hdfsDumpDir}-${wf:id()}"/>
      </fs>
      <ok to="end"/>
      <error to="sendEmailKill"/>
