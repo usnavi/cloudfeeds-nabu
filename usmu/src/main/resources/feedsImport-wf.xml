@@ -11,15 +11,15 @@
     The workflow takes the following parameters:
     
     - region         - the region to process data from. The region name is used
-                       as part of a directory path where Ballista is expected
-                       to write files in. 
+                       as part of a directory path where Postgres DB dump is 
+                       expected to write files in. 
     - emailToAddress - the email address to send error notifications. 
     - hdfsDumpDir    - this is the fully qualified HDFS path where the workflow
-                       needs to read exported data from Ballista
+                       needs to read exported data from Postgres DB dump
                        and writes to Hive. For example:
                           hdfs://myhadoop.cluster.host/cloudfeeds/feeds_dump/DFW/2015-02-17
 
-    The directory from which this workflow expects files from Ballista is:
+    The directory from which this workflow expects files from Postgres DB dump is:
         ${watchDir}/${YEAR}-${MONTH}-${DAY} 
 -->
 <workflow-app name="usmu" 
@@ -34,10 +34,6 @@
     </property>
     <property>
        <name>hdfsDumpDir</name>
-    </property>
-    <property>
-      <name>hdfsWatchDir</name>
-      <value>${nameNode}${watchDir}/</value>
     </property>
   </parameters>
 
@@ -66,9 +62,17 @@
       <script>copy_to_entries.q</script>
       <!--
            Parameters referenced within Hive script.
+
+           From the Coordinator, we get the hdfsDumpDir which is the directory
+           where we will expect Postgres DB dump files to exist. The value
+           of hdfsDumpDir will be a fully qualified hdfs path (i.e: 
+           hdfs://myname.node/cloudfeeds/feeds_dump/DFW/2015-02-17). But
+           Hive script does not take a fully qualified hdfs path. So I 
+           have to strip the nameNode out. This is what the replaceAll()
+           does.
       -->
       <param>INPUT_TABLE=dailyfeedsdump_${region}</param>
-      <param>INPUT_LOCATION=${watchDir}/${replaceAll(hdfsDumpDir, hdfsWatchDir, "")}</param>
+      <param>INPUT_LOCATION=${replaceAll(hdfsDumpDir, nameNode, "")}</param>
     </hive>
     
     <ok to="cleanup"/>

@@ -23,13 +23,13 @@ CREATE external TABLE IF NOT EXISTS ${INPUT_TABLE} (
        categories string,
        eventtype string,
        tenantid string,
-       dc string,
+       region string,
        feed string,
        date string)
 LOCATION '${INPUT_LOCATION}';
 
 -- Read from external table and insert into a partitioned Hive table
 FROM ${INPUT_TABLE} ent
-INSERT OVERWRITE TABLE entries_orc PARTITION(feed, date)
+INSERT OVERWRITE TABLE entries PARTITION(feed, date)
 SELECT ent.id, ent.entryid, ent.creationdate, ent.datelastupdated, ent.entrybody, ent.categories,
-ent.eventtype, ent.tenantid, ent.dc, ent.feed, ent.date;
+ent.eventtype, ent.tenantid, ent.region, ent.feed, ent.date;

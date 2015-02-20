@@ -6,8 +6,9 @@
     - coordAppName   - the name of the coordinator app
     - watchDir       - the top level directory where <date> subdirectories
                        containing data files are to be checked by this coordinator
+                       (i.e: /myapp/dailydumps)
     - workflowPath   - the HDFS path of the workflow to be launched when input
-                       data is available
+                       data is available (i.e: /myapp/workflow)
     - emailToAddress - the email address to send error notifications. 
     - startTime      - the first day that the coordinator needs to materialize an
                        Usmu job/workflow. If startTime is "2015-02-04T00:00Z", then
@@ -63,12 +64,6 @@
                  <name>hdfsDumpDir</name>
                  <value>${coord:dataIn('coordInput1')}</value>
              </property>
-             <!--
-             <property>
-                 <name>dateToProcess</name>
-                 <value>${coord:formatTime(coord:dataIn('coordInput1'),"yyyy-MM-dd")}</value>
-             </property>
-             -->
          </configuration>
       </workflow>
    </action>     

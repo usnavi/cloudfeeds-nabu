@@ -14,11 +14,10 @@ DROP TABLE IF EXISTS ${INPUT_TABLE};
 -- Create an external table pointing to current
 -- run directory location
 CREATE external TABLE IF NOT EXISTS ${INPUT_TABLE} (
-       id int,
-       tenantId string,
-       alternateId string,
+       id string,
+       alternate_id string,
        created timestamp,
        updated timestamp,
-       preferences string)
+       payload string)
 LOCATION '${INPUT_LOCATION}';
 
