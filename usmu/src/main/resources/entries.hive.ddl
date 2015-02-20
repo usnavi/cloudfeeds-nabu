@@ -5,14 +5,17 @@
 -- the table.
 
 CREATE TABLE entries(
-    id bigint,
-    entryid string,
-    creationdate timestamp,
-    datelastupdated timestamp,
-    entrybody string,
-    categories string,
-    eventtype string,
-    tenantid string,
-    dc string )
+       id bigint,
+       entryid string,
+       creationdate timestamp,
+       datelastupdated timestamp,
+       entrybody string,
+       categories string,
+       eventtype string,
+       tenantid string,
+       region string,
+       feed string,
+       date string)
+
 PARTITIONED BY( date string, feed string )
 STORED as ORC;

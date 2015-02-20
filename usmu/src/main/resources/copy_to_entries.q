@@ -30,6 +30,6 @@ LOCATION '${INPUT_LOCATION}';
 
 -- Read from external table and insert into a partitioned Hive table
 FROM ${INPUT_TABLE} ent
-INSERT OVERWRITE TABLE entries PARTITION(feed, date)
+INSERT OVERWRITE TABLE entries PARTITION(date, feed)
 SELECT ent.id, ent.entryid, ent.creationdate, ent.datelastupdated, ent.entrybody, ent.categories,
 ent.eventtype, ent.tenantid, ent.region, ent.feed, ent.date;
