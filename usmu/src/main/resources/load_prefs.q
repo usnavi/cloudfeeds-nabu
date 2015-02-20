@@ -16,8 +16,9 @@ DROP TABLE IF EXISTS ${INPUT_TABLE};
 CREATE external TABLE IF NOT EXISTS ${INPUT_TABLE} (
        id string,
        alternate_id string,
+       enabled boolean,
+       payload string,
        created timestamp,
-       updated timestamp,
-       payload string)
+       updated timestamp)
 LOCATION '${INPUT_LOCATION}';
 
