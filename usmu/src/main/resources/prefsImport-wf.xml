@@ -1,7 +1,7 @@
 <!--
     Oozie workflow to execute the following actions:
 
-    1) Run Hive action "copy_to_entries", which will:
+    1) Run Hive action "load_prefs.q", which will:
        a) create an external table pointing to a directory where Ballista dumps data
        b) read from the external table and write to a Hive partitioned table
        c) drops the external table
@@ -10,23 +10,16 @@
 
     The workflow takes the following parameters:
     
-    - region         - the region to process data from. The region name is used
-                       as part of a directory path where Postgres DB dump is 
-                       expected to write files in. 
     - emailToAddress - the email address to send error notifications. 
     - hdfsDumpDir    - this is the fully qualified HDFS path where the workflow
                        needs to read exported data from Postgres DB dump
                        and writes to Hive. For example:
-                          hdfs://myhadoop.cluster.host/cloudfeeds/feeds_dump/DFW/2015-02-17
-
+                          hdfs://myhadoop.cluster.host/cloudfeeds/prefs_dump/DFW
 -->
 <workflow-app name="usmu" 
 	      xmlns="uri:oozie:workflow:0.4">
 
   <parameters>
-    <property>
-       <name>region</name>
-    </property>
     <property>
        <name>emailToAddress</name>
     </property>
@@ -35,9 +28,9 @@
     </property>
   </parameters>
 
-  <start to="copy_to_entries"/>
+  <start to="load_prefs"/>
 
-  <action name="copy_to_entries">
+  <action name="load_prefs">
     <hive xmlns="uri:oozie:hive-action:0.2">
       <job-tracker>${jobTracker}</job-tracker>
       <name-node>${nameNode}</name-node>
@@ -57,19 +50,12 @@
       <!--
            Hive script which must exist in workflow directory on HDFS.
       -->
-      <script>copy_to_entries.q</script>
+      <script>load_prefs.q</script>
+
       <!--
            Parameters referenced within Hive script.
-
-           From the Coordinator, we get the hdfsDumpDir which is the directory
-           where we will expect Postgres DB dump files to exist. The value
-           of hdfsDumpDir will be a fully qualified hdfs path (i.e: 
-           hdfs://myname.node/cloudfeeds/feeds_dump/DFW/2015-02-17). But
-           Hive script does not take a fully qualified hdfs path. So I 
-           have to strip the nameNode out. This is what the replaceAll()
-           does.
       -->
-      <param>INPUT_TABLE=dailyfeedsdump_${region}</param>
+      <param>INPUT_TABLE=dailyprefsdump</param>
       <param>INPUT_LOCATION=${replaceAll(hdfsDumpDir, nameNode, "")}</param>
     </hive>
     

@@ -23,24 +23,42 @@ fi
 START_TIME=$1
 END_TIME=$2
 
-# TODO: these probably needs to be externalized somewhere
+# Need to have some starting assumption of where config files are
 USMU_ETC_DIR=/etc/cloudfeeds-nabu/usmu
-REGION_LIST="DFW ORD IAD SYD LON HKG"
-OOZIE=oozie
-OOZIE_URL=http://cloudfeeds-visual-n02.test.ord1.ci.rackspace.net:11000/oozie
-ERROR_EMAIL=cloudfeeds@rackspace.com
+COORDINATOR_PROPS=${USMU_ETC_DIR}/usmu-coordinator.properties
+
+if [ ! -f ${COORDINATOR_PROPS} ]; then
+    echo "ERROR: Coordinator properties file ${COORDINATOR_PROPS} does not exist."
+    exit 2
+fi
+source ${COORDINATOR_PROPS}
 
 # There doesn't seem to be a nicer way to find existing Oozie jobs so
 # we can kill and submit a new set. This one I found on the web and
 # probably needs to be evaluated every time we upgrade Oozie.
 
-# clean up previous run
+# Clean up previous run. 
+# WARNING: this WILL delete *all* RUNNING jobs.
 curl ${OOZIE_URL}'/v1/jobs?len=1000&filter=status%3DRUNNING&jobtype=coord'  | python -mjson.tool | grep "coordJobId" | sed "s/\(.*\)coordJobId\(.*\): \"\(.*\)\"\(.*\)/\3/" | while read job_id; do oozie job -oozie ${OOZIE_URL} -kill $job_id; done
 
-# run the feedsImport-coord.xml for each region
+# run the usmu-coordinator.xml for each region to watch for Cloud Feeds dump
 for aRegion in ${REGION_LIST}
 do
-    $OOZIE job -oozie ${OOZIE_URL} -config ${USMU_ETC_DIR}/feedsImport-coord.properties -submit \
+    $OOZIE job -oozie ${OOZIE_URL} -config ${COORDINATOR_PROPS} -submit \
+        -Doozie.coord.application.path=${nameNode}${USMU_HDFS_DIR}/usmu-coordinator.xml \
+        -DcoordAppName=FeedsImport-${aRegion} \
+        -DwatchDir=${FEEDS_DUMP_DIR}/${aRegion} \
+        -DworkflowPath=${USMU_HDFS_DIR}/feedsImport \
         -Dregion=$aRegion -DemailToAddress="${ERROR_EMAIL}" \
         -DstartTime="${START_TIME}" -DendTime="${END_TIME}"
 done
+
+# Run the prefsImport-coord.xml, in case we decide to get Oozie
+# involved in the Preferences Svc output
+#$OOZIE job -oozie ${OOZIE_URL} -config ${COORDINATOR_PROPS} -submit \
+#        -Doozie.coord.application.path=${nameNode}${USMU_HDFS_DIR}/usmu-coordinator.xml \
+#        -DcoordAppName=PrefsImport \
+#        -DwatchDir=${PREFS_DUMP_DIR} \
+#        -DworkflowPath=${USMU_HDFS_DIR}/prefsImport \
+#        -Dregion=$aRegion -DemailToAddress="${ERROR_EMAIL}" \
+#        -DstartTime="${START_TIME}" -DendTime="${END_TIME}" 

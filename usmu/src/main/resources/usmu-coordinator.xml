@@ -3,9 +3,12 @@
   
     This Oozie coordinator takes the following parameters:
 
-    - region         - the region to process data from. The region name is used
-                       as part of a directory path where Ballista is expected
-                       to write files in. 
+    - coordAppName   - the name of the coordinator app
+    - watchDir       - the top level directory where <date> subdirectories
+                       containing data files are to be checked by this coordinator
+                       (i.e: /myapp/dailydumps)
+    - workflowPath   - the HDFS path of the workflow to be launched when input
+                       data is available (i.e: /myapp/workflow)
     - emailToAddress - the email address to send error notifications. 
     - startTime      - the first day that the coordinator needs to materialize an
                        Usmu job/workflow. If startTime is "2015-02-04T00:00Z", then
@@ -16,7 +19,7 @@
                        will just need to set this to something arbitrarily long
                        in the future. The format should be "yyyy-MM-ddThh:mmZ".
 -->
-<coordinator-app name="FeedsImport-${region}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" 
+<coordinator-app name="${coordAppName}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" 
                  timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
    <controls>
        <!-- Materialized jobs should wait 22 hours (=1320 minutes) before timing out. 
@@ -28,22 +31,22 @@
       <!-- Every 15 minutes, the coordinator will check if a materialize job can run
            (i.e: the directory listed in uri-template exists)
        -->
-      <dataset name="feeds_dump" frequency="${coord:minutes(15)}" initial-instance="${startTime}" timezone="UTC">
-         <uri-template>${nameNode}/cloudfeeds/feeds_dump/${region}/${YEAR}-${MONTH}-${DAY}</uri-template>
+      <dataset name="watchDir" frequency="${coord:minutes(15)}" initial-instance="${startTime}" timezone="UTC">
+         <uri-template>${nameNode}${watchDir}/${YEAR}-${MONTH}-${DAY}</uri-template>
          <done-flag>_SUCCESS</done-flag>
       </dataset>
    </datasets>
    <input-events>
-      <data-in name="coordInput1" dataset="feeds_dump">
+      <data-in name="coordInput1" dataset="watchDir">
          <!--  The "date" directory should be the yesterday's date, as Ballista runs to dump data
                from the previous day. This is how you get the previous date.
          -->
-         <instance>${coord:current(-1)}</instance>
+         <instance>${coord:current(0)}</instance>
       </data-in>
    </input-events>
    <action>
       <workflow>
-         <app-path>${nameNode}/cloudfeeds/usmu/feedsImport-wf.xml</app-path>
+         <app-path>${nameNode}${workflowPath}</app-path>
          <configuration>
              <property>
                  <name>region</name>
@@ -54,8 +57,8 @@
                  <value>${emailToAddress}</value>
              </property>
              <property>
-                 <name>dateToProcess</name>
-                 <value>${coord:formatTime(coord:dateOffset(coord:nominalTime(), -1, 'DAY'),"yyyy-MM-dd")}</value>
+                 <name>hdfsDumpDir</name>
+                 <value>${coord:dataIn('coordInput1')}</value>
              </property>
          </configuration>
       </workflow>
