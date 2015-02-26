@@ -22,10 +22,10 @@ Usmu runs on the Gateway node or on the Name node of a Hadoop cluster where Oozi
 Here are the steps to install Usmu:
 
 1. Log on to the Gateway node or the Name node of your Hadoop cluster.
-  ```
+```
 rpm -Uvh cloudfeeds-nabu-usmu-${version}-1.noarch.rpm
-  ```
-  where ```${version}``` is the version of Usmu you want to install
+```
+where ```${version}``` is the version of Usmu you want to install
   
 2. Run the script to copy files to HDFS
 ```
@@ -39,6 +39,7 @@ hive -f prefs.hive.ddl -d INPUT_LOCATION=${prefsDumpDir}
 ```
 where ```${prefsDumpDir}``` is the directory where Ballista writes the Postgres DB dump of the 
 Preferences Service database.
+
 
 4. Run the script to kill old Usmu Oozie jobs and submit the new ones
 ```
