@@ -40,7 +40,6 @@ hive -f prefs.hive.ddl -d INPUT_LOCATION=${prefsDumpDir}
 where ```${prefsDumpDir}``` is the directory where Ballista writes the Postgres DB dump of the 
 Preferences Service database.
 
-
 4. Run the script to kill old Usmu Oozie jobs and submit the new ones
 ```
 /opt/cloudfeeds-nabu/usmu/bin/usmu-coord-run.sh
