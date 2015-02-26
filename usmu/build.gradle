@@ -76,6 +76,7 @@ ospackage {
     from('src/main/resources') {
         into install_path + '/bin'
         include 'usmu-*.sh'
+        include '*.ddl'
         // set permissions
         user app_user
         permissionGroup app_group

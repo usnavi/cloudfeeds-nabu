@@ -2,4 +2,5 @@
 // this is needed by the Release plugin
 rootProject.name = 'cloudfeeds-nabu'
 
-include ':usmu', ":tiamat"
+//include ':usmu', ":tiamat"
+include ':usmu'

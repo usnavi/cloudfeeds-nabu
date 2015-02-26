@@ -52,13 +52,3 @@ do
         -Dregion=$aRegion -DemailToAddress="${ERROR_EMAIL}" \
         -DstartTime="${START_TIME}" -DendTime="${END_TIME}"
 done
-
-# Run the prefsImport-coord.xml, in case we decide to get Oozie
-# involved in the Preferences Svc output
-#$OOZIE job -oozie ${OOZIE_URL} -config ${COORDINATOR_PROPS} -submit \
-#        -Doozie.coord.application.path=${nameNode}${USMU_HDFS_DIR}/usmu-coordinator.xml \
-#        -DcoordAppName=PrefsImport \
-#        -DwatchDir=${PREFS_DUMP_DIR} \
-#        -DworkflowPath=${USMU_HDFS_DIR}/prefsImport \
-#        -Dregion=$aRegion -DemailToAddress="${ERROR_EMAIL}" \
-#        -DstartTime="${START_TIME}" -DendTime="${END_TIME}" 
