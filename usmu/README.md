@@ -44,3 +44,13 @@ Here are the steps to install Usmu:
    ```
    /opt/cloudfeeds-nabu/usmu/bin/usmu-coord-run.sh
    ```
+
+## How to Configure Usmu
+Usmu configuration is located in the ```/etc/cloudfeeds-nabu/usmu``` directory of where Usmu RPM is installed. 
+There will be several files installed in that configuration directory:
+
+1. usmu-coordinator.properties
+   The semantic of the properties that can be configured are explained in that file.
+
+1. hive-site.xml
+   This is configuration of Hive in the Hadoop cluster, with which Usmu will interact
