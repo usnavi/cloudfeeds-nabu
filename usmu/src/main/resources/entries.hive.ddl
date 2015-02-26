@@ -13,9 +13,6 @@ CREATE TABLE entries(
        categories string,
        eventtype string,
        tenantid string,
-       region string,
-       feed string,
-       date string)
-
+       region string)
 PARTITIONED BY( date string, feed string )
 STORED as ORC;
