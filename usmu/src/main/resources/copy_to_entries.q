@@ -24,12 +24,12 @@ CREATE external TABLE IF NOT EXISTS ${INPUT_TABLE} (
        eventtype string,
        tenantid string,
        region string,
-       feed string,
-       date string)
+       date string,
+       feed string)
 LOCATION '${INPUT_LOCATION}';
 
 -- Read from external table and insert into a partitioned Hive table
 FROM ${INPUT_TABLE} ent
 INSERT OVERWRITE TABLE entries PARTITION(date, feed)
 SELECT ent.id, ent.entryid, ent.creationdate, ent.datelastupdated, ent.entrybody, ent.categories,
-ent.eventtype, ent.tenantid, ent.region, ent.feed, ent.date;
+ent.eventtype, ent.tenantid, ent.region, ent.date, ent.feed;
