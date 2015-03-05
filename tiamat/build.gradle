@@ -19,7 +19,7 @@ apply plugin: 'os-package-base'
 apply plugin: 'com.github.johnrengelman.shadow'
 
 // required by shadowJar
-mainClassName = 'com.rackspace.feeds.archives.ArchiveToFiles'
+mainClassName = 'com.rackspace.feeds.archives.Tiamat'
 
 shadowJar {
 
@@ -31,6 +31,9 @@ shadowJar {
 
     relocate 'org.apache.http', 'shaded.org.apache.http'
 }
+
+
+
 
 archivesBaseName = custom.parentProject + '-' + project.name
 
@@ -60,6 +63,14 @@ dependencies {
     compile 'org.apache.httpcomponents:httpclient:4.3'
     compile 'joda-time:joda-time:2.7'
     compile 'net.sf.saxon:Saxon-HE:9.4.0.6'
+    compile "com.github.scopt:scopt_2.10:3.3.0"
+    compile 'org.slf4j:slf4j-api:1.7.7'
+    compile 'ch.qos.logback:logback-classic:1.1.2'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.scalatest:scalatest_2.10:2.1.7'
+    testCompile 'org.mockito:mockito-all:1.9.5'
 }
 
 
@@ -74,50 +85,35 @@ ospackage {
     url = 'http://github.com/rackerlabs/cloudfeeds-nabu'
 
     // pre and post scriptlets
-    preInstall file('src/main/resources/preinstall.sh')
+    //preInstall file('src/main/resources/preinstall.sh')
     //postInstall file('src/main/resources/postinstall.sh')
 
     directory(config_path, 755)
     directory(install_path, 755)
-    directory(install_path + '/bin', 755)
+    directory(install_path + '/lib', 755)
 
-    /*
-    from('src/main/resources') {
-        into install_path
-        include '*-coord.xml'
-        include '*-wf.xml'
-        include '*.q'
-        // set permissions
-        user app_user
-        permissionGroup app_group
-        fileMode 0644
-        fileType CONFIG | NOREPLACE
-    }
-
-    from('src/main/resources') {
-        into install_path + '/bin'
-        include 'usmu-*.sh'
-        // set permissions
-        user app_user
-        permissionGroup app_group
-        fileMode 0755
-        fileType CONFIG | NOREPLACE
-    }
 
     from('src/main/resources') {
         into config_path
-        include '*.properties'
-        include 'hive-site.xml'
+        include 'logback.xml'
+        include 'tiamat.conf'
+        // set permissions
         user app_user
         permissionGroup app_group
         fileMode 0644
         fileType CONFIG | NOREPLACE
     }
-    */
+
+    // collect our jars
+    from('build/libs') {
+        into install_path + '/lib'
+        user app_user
+        permissionGroup app_group
+    }
 }
 
 // task to create RPM
-task buildRpm(type: Rpm) {
+task buildRpm(type: Rpm, dependsOn: 'shadowJar') {
     // this task inherits defaults from the ospackage section
     baseName = custom.parentProject + '-' + project.name
 }

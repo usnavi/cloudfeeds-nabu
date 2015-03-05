@@ -1,30 +1,52 @@
 package com.rackspace.feeds.archives
 
 import java.io._
+import java.util.UUID
 
 import javax.xml.transform
-import javax.xml.transform.{Source, URIResolver, TransformerFactory}
-import javax.xml.transform.stream.{StreamResult, StreamSource}
+import javax.xml.transform._
+import javax.xml.transform.stream._
 
 import net.sf.saxon.Controller
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql._
 import org.apache.spark._
 import org.codehaus.jackson.map.ObjectMapper
 import org.apache.spark.SparkContext._
 import org.codehaus.jackson.node.ObjectNode
-import org.joda.time.{DateTimeComparator, DateTime}
+import org.joda.time.{format, DateTimeZone, DateTimeComparator, DateTime}
 import org.joda.time.format._
+import org.slf4j.LoggerFactory
 
-import scala.xml.{Node, Elem, NodeSeq, XML}
-import scala.xml.transform.{RuleTransformer, RewriteRule}
+import scala.collection.JavaConverters
+import scala.xml._
+import scala.xml.transform._
 
 object Joda {
   implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
 }
 
 case class RestException( code : Int, message : String ) extends Throwable( s"""$code: $message""" )
-case class ArchiveKey( tenantid : String, dc : String, feed : String, format : String )
+
+case class TiamatError( archiveKey : ArchiveKey, throwable : Throwable )
+
+
+// TODO:  enum for formats??
+case class ArchiveKey( tenantid : String,
+                       region : String = "",
+                       feed : String = "",
+                       date : String = "",
+                       format : String = "" )
+
+object ArchiveKey {
+
+  def archiveKeyToString( a : ArchiveKey ) : String = {
+
+    s"tenantid: ${a.tenantid}, dc: ${a.region}, feed: ${a.feed}, date: ${a.date}, format: ${a.format}"
+  }
+}
+
 
 // TODO: looks like Timestamp was fixed in 1.2
 case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : Long ) extends Ordered[AtomEntry] {
@@ -49,55 +71,57 @@ case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : 
 }
 
 /**
- * Some notes on Tiamat:
+ * Archives atom events from the Cloud Feeds Hadoop cluster into Cloud Files on a per-tenant basis.
  *
- * - pulls preferences data from the "preferences" hive datastore
- * - currently hardcoded to pull events from 2015-01-27
- * - pulls events from the "import" hive datastore
- * - archives feeds with tenant ids & nast ids under the tenant id's cloud files
- * - archives xml, json or both based on a customer's preferences
- * - To build execute gradle tiamat:shadowJar
+ * Usage: com.rackspace.feeds.archives.Tiamat [options]
  *
- * Process
- * - Get all events for particular day
- * - Extract only events for archived feeds & tenants
+ * -c <value> | --config <value>
+ *       Config file path, default to /etc/cloudfeeds-tiamat/conf/tiamat.conf
+ * -f <value> | --feeds <value>
+ *       List feed names (comma-separated).  Default is to archive all archivable feeds.
+ * -d <value> | --dates <value>
+ *       List of dates in the format of YYYY-MM-DD (comma-separated).  Default is yesterday's date.
+ * -t <value> | --tenants <value>
+ *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
+ * -r <value> | --regions <value>
+ *
+ * --help
+ *       Show this.
+ *
+ * Process:
+ *
+ * - Get all events for requested days
+ * - Extract only events for requested archived feeds & tenants
  * - Filter out cloudfeeds:private events
  * - Map NastId events to tenant ids
  * - Run private attributes XSLT on each event
  * - Group events by tenantid-dc-feed-format
  * - Convert events into JSON (if required) and format for including in JSON array
  * - Sort events for tenantid-dc-feed-format and write out to cloud files
+ *   (Nast Id feeds are archived under the tenant's cloud files as well)
+ *
+ *  Notes:
+ *
+ * - pulls preferences data from the "preferences" hive datastore
+ * - pulls events from the "import" hive datastore
+ * - To build execute gradle tiamat:shadowJar
  *
  *
  *  TODO:  (will add these to Jira)
  *
- * - configuration
- * - add logging
- * - error handling so we don't stop processing
- * - interface for executing yesterday & custom
- * - test spark 1.2 to order by datelastupdated
- * - get xslt & wadl from standard-usage-schema
- * - load archived feeds from standard-usage-schema wadl
+ * - check for preferences success file
  * - can we define nast id feeds from wadl?
- * - make sure assumptions about what are in preferences are correct
- * - if DC is not specified (and no default) make sure that dc is not tracked
- * - unit tests
  * - packaging
- * - pool transformers
- *
+ * - pool transformers/singleton transformer?  broadcast variable for this?
  * - update json xslt to support xmlns:fh namespace
  */
 
-object ArchiveToFiles {
+object Tiamat {
 
-  import com.rackspace.feeds.archives.Identity._
   import com.rackspace.feeds.archives.Preferences._
   import com.rackspace.feeds.archives.CreateFilesFeed._
+  import com.rackspace.feeds.archives.RunConfig._
 
-
-  val admin = "XXX"
-  val apiKey = "XXX"
-  val pw = "XXX"
 
   val FEED = Set( "feed_1/events" )
   val FEED_NAST = Set( "nasty_1/events" )
@@ -113,60 +137,135 @@ object ArchiveToFiles {
 val FEED_NAST = Set( "files/events", "usagesummary/files/events" )
 */
 
+  val logger = LoggerFactory.getLogger(getClass)
+
   val isoFormat = ISODateTimeFormat.basicDateTime()
 
   def main( args: Array[String] ): Unit = {
 
-    // TODO: - if no date, get yesterday
-    val date = "2015-01-27"
-
-    // initialize spark & hive interface
-    val conf = new SparkConf().setAppName("ArchiveToFiles: " + date)
-    conf.set( "spark.eventLog.enabled", "true" )
-    val spark = new SparkContext(conf)
-    val hive = new HiveContext(spark)
-
     val feedSet = FEED ++ FEED_NAST
 
-    val dateTime = dayFormat.parseDateTime( date )
+    val options = new Options()
 
-    val token = getToken( admin, apiKey )
+    val runConfig = options.parseOptions(feedSet, args)
 
-    val entries = hive.sql( s"""select tenantid, dc, feed, entrybody, datelastupdated, id, categories from import where date = '$date'""")
+    val conf = options.getConf(runConfig)
+
+    val feedUuidMap = runConfig.feeds.map(
+      _ -> s"urn:uuid:${UUID.randomUUID().toString}"
+    ).toMap
+
+    val identity = new Identity(conf.getString("tiamat.identity.endpoint"),
+      conf.getString("tiamat.identity.user"),
+      conf.getString("tiamat.identity.apiKey"),
+      conf.getString("tiamat.identity.password"))
+
+    val liveUri = conf.getObject("tiamat.feeds.liveUri")
+
+    val liveUriMap = {
+
+      import JavaConverters._
+
+      liveUri.keySet().asScala.map(k =>
+
+        k -> conf.getString( s"tiamat.feeds.liveUri.${k}" )
+      ).toMap
+    }
+
+    val token = identity.getToken()
+
+    logger.debug( runConfig )
+
+    // initialize spark & hive interface
+    val sparkConf = new SparkConf().setAppName( this.getClass.getCanonicalName )
+
+    // TODO:  set this in default conf in spark
+    sparkConf.set( "spark.eventLog.enabled", "true" )
+    val spark = new SparkContext(sparkConf)
+    val hive = new HiveContext(spark)
 
     // tenant-related maps
-    val prefMap = tenantPrefs(hive)
-    val impMap = impersonationMap( token, prefMap, admin, pw )
+    val prefMap1 = tenantPrefs( hive, runConfig )
 
-    // group entries by tenant,feed, dc
-    val grouped = entries
-      .filter( viewableForArchivers( prefMap.values, feedSet) )
-      .flatMap( index( prefMap ) )
-      .map( processJson )
-      .groupByKey()
+    val (impMap, errorsImp) = impersonationMap( token, prefMap1, identity )
+
+    // FYI: filterKeys returns unserializable Map!
+    // https://issues.scala-lang.org/browse/SI-6654
+    val prefMap = prefMap1.filter( i => impMap.keySet.contains( i._1 ) )
+
+    val grouped = indexEntries(runConfig, hive, prefMap)
 
     def getFeedId = makeGetFeedId( prefMap, FEED_NAST )
 
     // write out tenant-feed-dc combos, return list of written files
-    val writtenSet = grouped.map { case (key, value) =>
+    val output = grouped.map { case (key, value) =>
 
-      writeFile(key, dateTime, value, prefMap, impMap, getFeedId)
-      key
-    }.collect().toSet
+      // calling .get blindly on an option is risky, but the region's are already filtered by the keys in the map
+      // so there will be a value
+      println( "region: " + liveUriMap.get( key.region ).get )
+
+      (key, writeFile(key, value, prefMap, impMap, getFeedId, feedUuidMap( key.feed ), liveUriMap.get( key.region ).get))
+    }
+
+    val errorsWrite = output.flatMap(
+      _._2 match {
+
+        case Some( e ) => List(e)
+        case _ => List()
+      }).collect
+
+    val writtenSet = output.map( _._1 ).collect.toSet
 
     // write out empty files
-    // need to filter this
     val expectedFiles = (for {t <- prefMap.keySet;
-                              f <- feedSet;
+                              f <- runConfig.feeds;
                               d <- prefMap( t ).containers.keySet;
-                              format <- prefMap( t ).formats }
-    yield ArchiveKey(t, d, f, format)).toSet
+                              format <- prefMap( t ).formats;
+                              date <- runConfig.dates}
+    yield ArchiveKey(t, d, f, dayFormat.print( date), format)).toSet
 
-    spark.parallelize(expectedFiles.diff(writtenSet).toSeq).foreach {
+    val errorsWriteEmpty = spark.parallelize(expectedFiles.diff(writtenSet).toSeq).map {
       {
-        key => writeFile( key, dateTime, Array[AtomEntry](), prefMap, impMap, getFeedId)
+        // calling .get blindly on an option is risky, but the region's are already filted by the keys in the map
+        // so there will be a value
+        key => writeFile( key, Array[AtomEntry](), prefMap, impMap, getFeedId, feedUuidMap( key.feed ), liveUriMap.get( key.region ).get )
       }
     }
+      .flatMap {
+      _ match {
+        case Some(e) => List(e)
+        case _ => List()
+      }
+    }.collect()
+
+    val errors = errorsImp ++ errorsWrite ++ errorsWriteEmpty
+
+    if( !errors.isEmpty ) {
+
+      errors.foreach( e => {
+
+        import ArchiveKey._
+
+        logger.error(s"ERROR: ${archiveKeyToString( e.archiveKey ) }: ${e.throwable.getMessage}", e.throwable )
+      }
+      )
+      throw new Exception( "ERRORS!" )
+    }
+  }
+
+  def indexEntries(runConfig: RunConfig, hive: HiveContext, prefMap: Map[String, TenantPrefs]): RDD[(ArchiveKey, Iterable[AtomEntry])] = {
+    // group entries by tenant,feed,region,date
+    val grouped = getEntries(runConfig, hive)
+      .filter(viewableForArchivers(prefMap.values, runConfig.feeds.toSet, runConfig.regions.toSet))
+      .flatMap(index(prefMap))
+      .map(processJson)
+      .groupByKey()
+    grouped
+  }
+
+  def getEntries(runConfig: RunConfig, hive: HiveContext): SchemaRDD = {
+    val dateWhere = runConfig.dates.map(d => s"date = '${dayFormat.print(d)}'").mkString(" OR ")
+    hive.sql( s"""select tenantid, dc, feed, entrybody, datelastupdated, id, categories, date from import where ${dateWhere}""")
   }
 
   /**
@@ -238,8 +337,9 @@ val FEED_NAST = Set( "files/events", "usagesummary/files/events" )
   /**
    * Filter entries:
    * <ul>
-   *   <li> only for archived feeds
    *   <li> only for archived tenants
+   *   <li> only for requested feeds
+   *   <li> only for requested regions
    *   <li> no private entries
    * </ul>
    *
@@ -248,11 +348,12 @@ val FEED_NAST = Set( "files/events", "usagesummary/files/events" )
    * @param row
    * @return
    */
-  def viewableForArchivers( ids : Iterable[TenantPrefs], feedSet : Set[String] )( row : Row ) : Boolean = {
+  def viewableForArchivers( ids : Iterable[TenantPrefs], feedSet : Set[String], regionSet : Set[String] )( row : Row ) : Boolean = {
 
     ids.flatMap(a => List(a.tenantId, a.alternateId)).toSet
       .contains(row.getString(0)) &&
       feedSet.contains(row.getString(2)) &&
+      regionSet.contains( row.getString(1) ) &&
       !row.getString( 6 ).split( "|" ).contains( "cloudfeeds:private" )
   }
 
@@ -274,7 +375,7 @@ val FEED_NAST = Set( "files/events", "usagesummary/files/events" )
 
     row => {
 
-     val entrybody = privateAttrs( row )
+     val entrybody = privateAttrs( row.getString(3) )
 
       val id = row.getString(0)
 
@@ -285,19 +386,16 @@ val FEED_NAST = Set( "files/events", "usagesummary/files/events" )
       }
 
       prefMap( tenantid ).formats.flatMap( f =>
-        List(( ArchiveKey( tenantid, row.getString(1), row.getString(2), f ), AtomEntry( row.getString(3 ),
-        /*isoFormat.parseDateTime( row.getString(4)), */ row.getLong(5)))))
+        List(( ArchiveKey( tenantid, row.getString(1), row.getString(2), row.getString( 7 ), f ),
+          AtomEntry( entrybody, /*isoFormat.parseDateTime( row.getString(4)), */ row.getLong(5)))))
     }
   }
 
   /**
    * Filter private attributes.
    *
-   * @param row
-   * @return
    */
-  def privateAttrs(row: Row) : String = {
-    val entrybody = row.getString(3)
+  def privateAttrs( entrybody : String ) : String = {
 
     val removeLink = new RewriteRule {
       override def transform(n: Node): NodeSeq = n match {
@@ -357,58 +455,6 @@ val FEED_NAST = Set( "files/events", "usagesummary/files/events" )
       }
     }
   }
-
 }
 
-
-/*
-object Test {
-
-  def main( args: Array[String] ): Unit = {
-
-    val entry = """<atom:entry index="0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns="http://wadl.dev.java.net/2009/02" xmlns:db="http://docbook.org/ns/docbook" xmlns:error="http://docs.rackspace.com/core/error" xmlns:wadl="http://wadl.dev.java.net/2009/02" xmlns:json="http://json-schema.org/schema#" xmlns:saxon="http://saxon.sf.net/" xmlns:sum="http://docs.rackspace.com/core/usage/schema/summary" xmlns:d558e1="http://wadl.dev.java.net/2009/02" xmlns:cldfeeds="http://docs.rackspace.com/api/cloudfeeds"><atom:id>urn:uuid:59085a27-f9ac-44f7-a74b-0d41fe3c4585</atom:id><atom:category term="tid:5821027" /><atom:category term="rgn:DFW" /><atom:category term="dc:DFW1" /><atom:category term="rid:ed3f75f5-bd98-4c62-b670-46c7d15ea601" /><atom:category term="widget.widget.gadget.usage" /><atom:category term="type:widget.widget.gadget.usage" /><atom:content type="application/xml"><event xmlns="http://docs.rackspace.com/core/event" xmlns:widget="http://docs.rackspace.com/usage/widget" dataCenter="DFW1" endTime="2012-03-12T15:51:11Z" environment="PROD" id="59085a27-f9ac-44f7-a74b-0d41fe3c4585" region="DFW" resourceId="ed3f75f5-bd98-4c62-b670-46c7d15ea601" startTime="2012-03-12T11:51:11Z" tenantId="5821027" type="USAGE" version="1"><widget:product version="3" serviceCode="Widget" resourceType="WIDGET" label="test" widgetOnlyAttribute="bar" privateAttribute1="something you can not see" myAttribute="here it should be private" privateAttribute3="W2" mid="e9a67860-52e6-11e3-a0d1-002500a28a7a"><widget:metaData key="foo" value="bar"/><widget:mixPublicPrivateAttributes privateAttribute3="45" myAttribute="here it should be public"/></widget:product></event></atom:content><atom:link href="https://atom.test.ord1.us.ci.rackspace.net/functest1/events/entries/urn:uuid:59085a27-f9ac-44f7-a74b-0d41fe3c4585" rel="self" /><updated>2015-02-05 11:37:52.737</updated><published>2015-01-30T20:59:53.836Z</published></atom:entry>"""
-
-    val source = new StreamSource(new StringReader( entry ))
-
-    val writer = new StringWriter()
-    val result = new StreamResult( writer )
-    val xsltWrapper = new StreamSource( getClass.getResourceAsStream( "/xml2json-feeds.xsl" ) )
-
-    val  resolver = new URIResolver() {
-
-      override def resolve(href: String, base: String): transform.Source = {
-
-        // assume xslt within classpath
-        new StreamSource( getClass.getResourceAsStream( s"/$href" ) )
-      }
-    }
-
-    val factory = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null)
-    factory.setURIResolver( resolver )
-
-    val transformer = factory.newTransformer( xsltWrapper )
-    (transformer.asInstanceOf[Controller]).setInitialTemplate( "main" );
-
-    transformer.transform( source, result )
-
-    val json = writer.toString
-    println( json )
-
-    val mapper = new ObjectMapper()
-
-    val map = mapper.readTree( json )
-
-    val entryMap = map.get("entry").asInstanceOf[ObjectNode]
-    entryMap.remove("@type")
-
-    val writer2 = new StringWriter()
-
-    mapper.writeValue( writer2 , entryMap )
-
-    println( writer2.toString )
-
-  }
-}
-
-*/
 
