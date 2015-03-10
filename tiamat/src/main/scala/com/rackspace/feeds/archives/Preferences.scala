@@ -35,7 +35,7 @@ object Preferences {
   }
 
   /**
-   * Create map entry of tenant id -> TenantFreferences
+   * Create map entry of tenant id -> TenantPreferences
    *
    * @param regions
    * @param row

@@ -85,7 +85,7 @@ ospackage {
     url = 'http://github.com/rackerlabs/cloudfeeds-nabu'
 
     // pre and post scriptlets
-    //preInstall file('src/main/resources/preinstall.sh')
+    preInstall file('../src/main/resources/preinstall.sh')
     //postInstall file('src/main/resources/postinstall.sh')
 
     directory(config_path, 755)
@@ -113,7 +113,7 @@ ospackage {
 }
 
 // task to create RPM
-task buildRpm(type: Rpm, dependsOn: 'shadowJar') {
+task buildRpm(type: Rpm, dependsOn: 'shadowJar' ) {
     // this task inherits defaults from the ospackage section
     baseName = custom.parentProject + '-' + project.name
 }

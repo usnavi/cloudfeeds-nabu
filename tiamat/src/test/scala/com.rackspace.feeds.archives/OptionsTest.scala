@@ -17,6 +17,14 @@ class OptionsTest extends FunSuite {
   val FEEDS = Set( "feed1", "feed2" )
   val CONF = "src/test/resources/test.conf"
 
+  def getConf( path : String = CONF ) : String = {
+
+    new File( "." ).getCanonicalPath.split( "/" ).last match {
+      case "tiamat" => path
+      case _ => "tiamat/" + path
+    }
+  }
+
   test("Invalid feeds option returns error") {
 
     val options = new Options()
@@ -29,7 +37,7 @@ class OptionsTest extends FunSuite {
   test("No feeds option produces default feeds") {
 
     val options = new Options()
-    val config = options.parseOptions( FEEDS, Array("-c", CONF ) )
+    val config = options.parseOptions( FEEDS, Array("-c", getConf() ) )
 
     assert( FEEDS &~ config.feeds.toSet isEmpty )
   }
@@ -57,26 +65,24 @@ class OptionsTest extends FunSuite {
     val options = new Options()
 
     intercept[Exception] {
-      val config = options.parseOptions(FEEDS, Array("-r", "crazydown", "-c", CONF))
+      val config = options.parseOptions(FEEDS, Array("-r", "crazytown", "-c", getConf() ))
     }
   }
 
   test("Default regions") {
 
     val options = new Options()
-    val config = options.parseOptions( FEEDS, Array("-c", CONF ) )
+    val config = options.parseOptions( FEEDS, Array("-c", getConf() ) )
 
     assert( Set( "dfw","iad","hkg", "lon","ord", "syd" ) &~ config.regions.toSet isEmpty )
   }
 
   test( "Bad config file" ) {
 
-    println( "greg" )
-    println( "pwd: " + (new File( "." ).getCanonicalPath ))
 
     val options = new Options()
     intercept[ConfigException] {
-      val config = options.parseOptions(FEEDS, Array("-c", "src/test/resources/bad.conf"))
+      val config = options.parseOptions(FEEDS, Array("-c", getConf( "src/test/resources/bad.conf" ) ) )
     }
   }
 
@@ -91,7 +97,7 @@ class OptionsTest extends FunSuite {
 
 
     val options = new Options()
-    val config = options.parseOptions( FEEDS, Array("-c", CONF,
+    val config = options.parseOptions( FEEDS, Array("-c", getConf(),
     "-f", feeds.mkString(","),
     "-d", "2015-01-01,2014-01-01",
     "-t", tids.mkString( "," ),
@@ -101,10 +107,5 @@ class OptionsTest extends FunSuite {
     assert( tids &~ config.tenantIds.toSet isEmpty )
     assert( regs &~ config.regions.toSet isEmpty )
     assert( dates &~ config.dates.toSet isEmpty )
-  }
-
-  test( "test defaults!" ) {
-
-    assert( false )
   }
 }

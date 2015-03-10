@@ -91,7 +91,13 @@ class Options {
         c.copy( regions = x)
       }
 
-      help("help") text ("Show this.")
+      help("help") text ( "Show this." )
+
+      note( """|
+               |If the contents of /etc/cloudfeeds-nabu/tiamat/logback.xml are modified, they need to be loaded
+               |at runtime.
+               |
+               |  -Dlogback.configurationFile=<path to logback.xml>""".stripMargin )
     }
 
     val rc = parser.parse(args, RunConfig()) match {

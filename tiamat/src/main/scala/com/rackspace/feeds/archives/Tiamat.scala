@@ -88,6 +88,10 @@ case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : 
  * --help
  *       Show this.
  *
+ * If the contents of /etc/cloudfeeds-nabu/tiamat/logback.xml are modified, they need to be loaded
+ * at runtime.
+ *   -Dlogback.configurationFile=<path to logback.xml>
+ *
  * Process:
  *
  * - Get all events for requested days
@@ -111,7 +115,6 @@ case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : 
  *
  * - check for preferences success file
  * - can we define nast id feeds from wadl?
- * - packaging
  * - pool transformers/singleton transformer?  broadcast variable for this?
  * - update json xslt to support xmlns:fh namespace
  */

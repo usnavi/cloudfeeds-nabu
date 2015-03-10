@@ -1,3 +1,10 @@
+<!--
+  NOTE:  This file is a copy of what exists on the classpath and is not loaded on startup.  If it is modified,
+  to load at runtime,  use the following:
+
+  -Dlogback.configurationFile=<path to logback.xml>
+
+-->
 <configuration>
     <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
         <!-- encoders are assigned the type
