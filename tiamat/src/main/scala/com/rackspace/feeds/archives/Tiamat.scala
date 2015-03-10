@@ -71,6 +71,12 @@ case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : 
 }
 
 /**
+ * spark-submit  --class com.rackspace.feeds.archives.Tiamat --master yarn-cluster --num-executors 3
+ * --executor-memory 512m
+ * --jars apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-api-jdo-3.2.1.jar,apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-core-3.2.2.jar,apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-rdbms-3.2.1.jar,/home/rona6028/apps/spark-1.1.1-bin-hadoop2.4/conf/hive-site.xml
+ * /opt/cloudfeeds-nabu/tiamat/lib/cloudfeeds-nabu-tiamat-1.0.0-SNAPSHOT-all.jar  -c /home/rona6028/temp-staging.conf -d 2015-01-27
+ *
+ *
  * Archives atom events from the Cloud Feeds Hadoop cluster into Cloud Files on a per-tenant basis.
  *
  * Usage: com.rackspace.feeds.archives.Tiamat [options]

@@ -23,6 +23,8 @@ mainClassName = 'com.rackspace.feeds.archives.Tiamat'
 
 shadowJar {
 
+    dependsOn 'test'
+
     dependencies {
         exclude(dependency('org.scala-lang:scala-library:2.10.4'))
         exclude(dependency('org.apache.spark:spark-core_2.10:1.1.1'))
