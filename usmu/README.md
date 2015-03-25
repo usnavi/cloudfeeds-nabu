@@ -30,7 +30,7 @@ Here are the steps to install Usmu:
    
 2. Adjust configuration files (see How to Configure Usmu section below)
   
-3. Run the script to copy files to HDFS
+3. Run the script to copy configuration files (and any other necessary files) to HDFS. You will need to do this every time you modify any configuration files!
    ```
    /opt/cloudfeeds-nabu/usmu/bin/usmu-install-to-hdfs.sh
    ```
