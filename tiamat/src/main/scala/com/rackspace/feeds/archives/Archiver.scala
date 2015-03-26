@@ -304,16 +304,6 @@ object Archiver {
 
   def toEntry( row : Row ) : Entry = {
 
-    System.out.println( "GREG" )
-    System.out.println( "0: " + row.getString( 0 ) )
-    System.out.println( "1: " + row.getString( 1 ) )
-    System.out.println( "2: " + row.getString( 2 ) )
-    System.out.println( "3: " + row.getString( 3 ) )
-    System.out.println( "5: " + row.getLong( 5 ) )
-    System.out.println( "6: " + row.getString( 6 ) )
-    System.out.println( "7: " + row.getString( 7 ) )
-
-
     Entry( row.getString( 0 ),
       row.getString( 1 ),
       row.getString( 2 ),
