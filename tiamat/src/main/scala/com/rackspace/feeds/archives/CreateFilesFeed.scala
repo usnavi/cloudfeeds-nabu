@@ -50,46 +50,6 @@ object CreateFilesFeed {
   }
 
   /**
-   * Given the parameters, do the following:
-   * <ul>
-   *   <li> ensure container exists and create if necessary
-   *   <li> create feed & write to container
-   * </ul>
-   *
-   * @param key
-   * @param content
-   * @param prefMap
-   * @param impMap
-   * @param getFeedId
-   * @param feedUuid
-   * @param liveFeed
-   * @return
-   */
-  def writeFile( key : ArchiveKey,
-                 content: Iterable[AtomEntry],
-                 prefMap: Map[String, TenantPrefs],
-                 impMap: Map[String, String],
-                 getFeedId : (String, String) => String,
-                 feedUuid : String,
-                 liveFeed : String ) : Option[TiamatError] = {
-
-    val tid = key.tenantid
-
-    val container = prefMap( tid ).containers(key.region)
-
-    try {
-      containerCheck(container, impMap(tid))
-      createFeed(container, key, content, impMap(tid), getFeedId, feedUuid, liveFeed)
-      None
-    }
-    catch {
-
-      case th : Throwable => Some( TiamatError( key, th ) )
-
-    }
-  }
-
-  /**
    * Create feed and write to given file location.
    *
    * @param container

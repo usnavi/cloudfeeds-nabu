@@ -1,6 +1,7 @@
 package com.rackspace.feeds.archives
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.codehaus.jackson.JsonNode
@@ -21,17 +22,16 @@ object Preferences {
    * @param runConfig
    * @return
    */
-  def tenantPrefs(hive: HiveContext, runConfig : RunConfig ): Map[String, TenantPrefs] = {
+  def tenantPrefs(hive: HiveContext, runConfig : RunConfig ): RDD[(String, TenantPrefs)] = {
 
     val tids = runConfig.tenantIds.toSet
     val regions = runConfig.regions
 
-    hive.sql("select id, preferences_metadata_id, payload, alternate_id, created, updated, enabled from preferences")
+    hive.sql("select id, payload, alternate_id, created, updated, enabled from preferences")
       .filter( (row) => tids.isEmpty match {
       case true => true
       case false => tids.contains(row.getString(0))
-    })
-      .collect.flatMap(tenantContainers( regions, _ )).toMap
+    }).flatMap(tenantContainers( regions, _ ))
   }
 
   /**
@@ -46,11 +46,11 @@ object Preferences {
     import scala.collection.JavaConversions._
 
     val tenantId = row.getString(0)
-    val prefs = (new ObjectMapper).readTree(row.getString(2))
+    val prefs = (new ObjectMapper).readTree(row.getString(1))
     val formatsNode = prefs.get("data_format").getElements
     val formats = List() ++ formatsNode.map(_.getTextValue)
     val urls = prefs.get("archive_container_urls")
-    val enabled = row.getBoolean(6)
+    val enabled = row.getBoolean(5)
 
     enabled match {
 
@@ -88,7 +88,7 @@ object Preferences {
           )
         }.toMap[String, String]
 
-        List((tenantId, TenantPrefs(tenantId, row.getString(3), containers, formats)))
+        List((tenantId, TenantPrefs(tenantId, row.getString(2), containers, formats)))
       }
     }
   }
@@ -104,13 +104,15 @@ object Preferences {
    * Returns tuple of successful impersonation tokens & list of errors of the rest of impersonation token retrievall attempts.
    *
    * @param token
-   * @param prefMap
+   * @param tenants
    * @param identity
    * @return
    */
-  def impersonationMap(token: String, prefMap: Map[String, TenantPrefs], identity : Identity ): (Map[String, String], Iterable[TiamatError]) = {
+  def impersonationMap(token: String,
+                       tenants: RDD[(String, TenantPrefs)],
+                       identity : Identity ): (Map[String, String], Iterable[TiamatError]) = {
 
-    val output = prefMap.map(a => {
+    val output = tenants.map( a => {
 
       val imp = Try( {
         val user = identity.getTenantAdmin( a._1 )
@@ -126,7 +128,7 @@ object Preferences {
         case Success( token ) => List( a._1 -> token)
         case _ => List()
       }
-    }).toMap
+    }).collect.toMap
 
     val errors = output.flatMap( a => {
 
@@ -134,7 +136,7 @@ object Preferences {
         case Failure( e ) => List( TiamatError( ArchiveKey( a._1 ), e ) )
         case _ => List()
       }
-    })
+    }).collect
 
     (impMap, errors)
   }

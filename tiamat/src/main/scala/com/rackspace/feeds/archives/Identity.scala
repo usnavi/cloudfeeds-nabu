@@ -26,7 +26,7 @@ object Identity {
   val CONTENT_TYPE = "Content-Type"
 }
 
-class Identity( host : String, admin : String, apiKey : String, pw : String ) {
+class Identity( host : String, admin : String, apiKey : String, pw : String )  extends Serializable {
 
   val identity = s"https://${host}"
 
@@ -133,3 +133,5 @@ class Identity( host : String, admin : String, apiKey : String, pw : String ) {
     }
   }
 }
+
+

@@ -14,7 +14,7 @@ import org.scalatest.junit.JUnitRunner
 class CreateFilesFeedTest extends FunSuite {
 
   import CreateFilesFeed._
-  import Tiamat._
+  import Archiver._
 
   val PREFACE = """<?xml version="1.0" encoding="UTF-8" ?>
       <feed xmlns="http://www.w3.org/2005/Atom"
@@ -28,14 +28,14 @@ class CreateFilesFeedTest extends FunSuite {
         <link rel="next-archive" href="container1/region1_feed1_2014-02-17.xml"/>
         <updated>TIME</updated>"""
 
-  test( "feedPreface() - feed uses tenant id" ) {
+  test( "feedPreface() - feed preface should be correct for given tenant and feed" ) {
 
     val tenantPrefs = Map( "1234" -> TenantPrefs( "1234", "1234_nast", Map(), List( CreateFilesFeed.XML_KEY ) ) )
 
     val preface = feedPreface( "container1",
       "filename1",
       ArchiveKey( "1234", "region1", "feed1", "2014-02-18", XML_KEY  ),
-      makeGetFeedId( tenantPrefs, Set() ),
+      makeNastIdToTenantMap( tenantPrefs, Set() ),
       "uuid1",
       "http://livefeed1" )
 
@@ -43,7 +43,7 @@ class CreateFilesFeedTest extends FunSuite {
       PREFACE.replaceAll( "\\s+", " " )  )
   }
 
-  test( "feedPreface() - feed uses nast id" ) {
+  test( "feedPreface() - feed preface should be correct for given tenant and Nast ID feed" ) {
 
     val protoPreface = """<?xml version="1.0" encoding="UTF-8" ?>
       <feed xmlns="http://www.w3.org/2005/Atom"
@@ -62,7 +62,7 @@ class CreateFilesFeedTest extends FunSuite {
     val preface = feedPreface( "container1",
       "filename1",
       ArchiveKey( "1234", "region1", "feed1", "2014-02-18", XML_KEY  ),
-      makeGetFeedId( tenantPrefs, Set( "feed1" ) ),
+      makeNastIdToTenantMap( tenantPrefs, Set( "feed1" ) ),
       "uuid1",
       "http://livefeed1" )
 

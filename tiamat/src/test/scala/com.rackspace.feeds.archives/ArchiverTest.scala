@@ -1,19 +1,18 @@
 package com.rackspace.feeds.archives
 
-import org.apache.spark.sql.Row
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.mock.MockitoSugar
-import org.mockito.Mockito._
+import java.sql.Timestamp
 
 /**
  * Created by rona6028 on 3/4/15.
  */
 @RunWith(classOf[JUnitRunner])
-class TiamatTest extends FunSuite with MockitoSugar {
+class ArchiverTest extends FunSuite with MockitoSugar {
 
-  import Tiamat._
+  import Archiver._
 
   val CHECK_XML = """<atom:entry xmlns="http://www.w3.org/2001/XMLSchema"
                     |            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -122,29 +121,6 @@ class TiamatTest extends FunSuite with MockitoSugar {
                      |        "serviceCode":"Widget"}}}}
                      |""".stripMargin
 
-  def createRow( tenantId : String,
-                 region : String,
-                 feed : String,
-                 entrybody : String,
-                 datelastUpated : String,
-                 id : Long,
-                 categories : String,
-                 date : String ) : Row = {
-
-    val mockRow = mock[Row]
-
-    when( mockRow.getString(0)).thenReturn( tenantId )
-    when( mockRow.getString(1)).thenReturn( region )
-    when( mockRow.getString(2)).thenReturn( feed )
-    when( mockRow.getString(3)).thenReturn( entrybody )
-    when( mockRow.getString(4)).thenReturn( datelastUpated )
-    when( mockRow.getLong(5)).thenReturn( id )
-    when( mockRow.getString(6)).thenReturn( categories )
-    when( mockRow.getString(7)).thenReturn( date )
-
-    mockRow
-  }
-
 
   test( "index() - process event with private attributes" ) {
 
@@ -196,7 +172,7 @@ class TiamatTest extends FunSuite with MockitoSugar {
                                   |</atom:entry>
                                   |""".stripMargin, 1 )
 
-    val row = createRow( protoKey.tenantid, protoKey.region, protoKey.feed,
+    val entry = Entry( protoKey.tenantid, protoKey.region, protoKey.feed,
       """<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns="http://wadl.dev.java.net/2009/02" xmlns:db="http://docbook.org/ns/docbook" xmlns:error="http://docs.rackspace.com/core/error" xmlns:d312e1="http://wadl.dev.java.net/2009/02" xmlns:wadl="http://wadl.dev.java.net/2009/02" xmlns:usage-summary="http://docs.rackspace.com/core/usage-summary">
         |  <atom:id>urn:uuid:560490c6-6c63-11e1-adfe-27851d5aed43</atom:id>
         |  <atom:category term="tid:12334"/>
@@ -219,13 +195,13 @@ class TiamatTest extends FunSuite with MockitoSugar {
         |  <atom:updated>2014-02-18T21:12:10.997Z</atom:updated>
         |  <atom:published>2014-02-18T21:12:10.997Z</atom:published>
         |</atom:entry>""".stripMargin,
-      "2014-02-18T21:12:10.997Z", 1,
+      new Timestamp( 1392779530 ), 1,
       "tid:12334|rgn:DFW|dc:DFW1|rid:4a2b42f4-6c63-11e1-815b-7fcbcf67f549|widget.widget.widget.update|type:widget.widget.widget.update|label:test|metaData.key:foo",
       protoKey.date )
 
     val tenantPrefs = Map( "1234" -> TenantPrefs( "1234", "1234_nast", Map(), List( CreateFilesFeed.XML_KEY ) ) )
 
-    val ( archiveKey, atomEntry ) = index( tenantPrefs )( row )( 0 )
+    val ( archiveKey, atomEntry ) = index( tenantPrefs )( entry )( 0 )
 
     assert( archiveKey == protoKey  )
     assert( atomEntry.id == protoEntry.id )
@@ -238,11 +214,12 @@ class TiamatTest extends FunSuite with MockitoSugar {
 
     val protoEntry = AtomEntry( CHECK_XML, 1 )
 
-    val row = createRow( protoKey.tenantid,
+    val row = Entry( protoKey.tenantid,
       protoKey.region,
       protoKey.feed,
       INPUT_XML,
-      "2014-02-18T21:12:10.997Z", 1,
+      new Timestamp( 1392779530 ),
+      1,
       "tid:12334|rgn:DFW|dc:DFW1|rid:4a2b42f4-6c63-11e1-815b-7fcbcf67f549|widget.widget.widget.update|type:widget.widget.widget.update|label:test|metaData.key:foo",
       protoKey.date )
 
@@ -263,11 +240,11 @@ class TiamatTest extends FunSuite with MockitoSugar {
 
     val nastId = "1234_nast"
 
-    val row = createRow( nastId,
+    val row = Entry( nastId,
       protoKey.region,
       protoKey.feed,
       INPUT_XML,
-      "2014-02-18T21:12:10.997Z", 1,
+      new Timestamp( 1392779530 ), 1,
       "tid:12334|rgn:DFW|dc:DFW1|rid:4a2b42f4-6c63-11e1-815b-7fcbcf67f549|widget.widget.widget.update|type:widget.widget.widget.update|label:test|metaData.key:foo",
       protoKey.date )
 

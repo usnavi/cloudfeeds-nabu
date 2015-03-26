@@ -21,9 +21,9 @@ class PreferencesTest extends FunSuite with MockitoSugar {
     val mockRow = mock[Row]
 
     when( mockRow.getString(0)).thenReturn( tid )
-    when( mockRow.getString(2)).thenReturn( payload )
-    when( mockRow.getString(3)).thenReturn( aid )
-    when( mockRow.getBoolean(6)).thenReturn( enabled )
+    when( mockRow.getString(1)).thenReturn( payload )
+    when( mockRow.getString(2)).thenReturn( aid )
+    when( mockRow.getBoolean(5)).thenReturn( enabled )
 
     mockRow
   }

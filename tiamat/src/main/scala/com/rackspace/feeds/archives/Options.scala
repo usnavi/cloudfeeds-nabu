@@ -7,11 +7,29 @@ import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 import scopt.{OptionParser, Read}
 
+import scala.collection.JavaConversions
+
 case class RunConfig( configPath : String = Options.CONF,
                       feeds : Seq[String] = Seq[String](),
                       dates : Seq[DateTime] = Seq[DateTime](),
                       tenantIds : Seq[String] = Seq[String](),
-                      regions : Seq[String] = Seq[String]() )
+                      regions : Seq[String] = Seq[String](),
+                      config : Config = ConfigFactory.empty() ) {
+
+  def getMossoFeeds() : Set[String] = {
+
+    import JavaConversions._
+
+    config.getStringList("tiamat.feeds.MossoId").toSet
+  }
+
+  def getNastFeeds() : Set[String] = {
+
+    import JavaConversions._
+
+    config.getStringList("tiamat.feeds.NastId").toSet
+  }
+}
 
 object RunConfig {
 
@@ -30,6 +48,7 @@ object RunConfig {
 object Options {
 
   val CONF = "/etc/cloudfeeds-nabu/tiamat/tiamat.conf"
+
 }
 
 /**
@@ -41,7 +60,7 @@ class Options {
 
   import Options._
 
-  def parseOptions( feedSet : Set[String], args: Array[String]): RunConfig = {
+  def parseOptions( args: Array[String]): RunConfig = {
     implicit val dateTimeRead: Read[DateTime] = Read.reads {
 
       DateTimeFormat.forPattern("yyyy-MM-dd").parseDateTime
@@ -66,20 +85,12 @@ class Options {
       opt[Seq[String]]('f', "feeds") action { (x, c) =>
 
         c.copy(feeds = x)
-      } validate { x =>
-
-        x.foldLeft( success )( ( output, f) =>
-
-          feedSet.contains(f) match {
-            case true => output
-            case false => failure(s"'$f' is not an archived feed")
-          })
       } text ("List feed names (comma-separated).  Default is to archive all archivable feeds.")
 
       opt[Seq[DateTime]]('d', "dates") action { (x, c) =>
 
         c.copy(dates = x)
-      } text ("List of dates in the format of YYYY-MM-DD (comma-separated).  Default is yesterday's date.")
+      } text ("List of dates in the format of yyyy-MM-dd (comma-separated).  Default is yesterday's date.")
 
       opt[Seq[String]]('t', "tenants") action { (x, c) =>
 
@@ -89,7 +100,7 @@ class Options {
       opt[Seq[String]]('r', "regions") action { (x, c) =>
 
         c.copy( regions = x)
-      }
+      } text( "List of regions (common-separated).  Default is all regions." )
 
       help("help") text ( "Show this." )
 
@@ -106,6 +117,16 @@ class Options {
       case _ => throw new Exception( "Invalid ")
     }
 
+    val rc1 = processDates(rc)
+
+    val conf = getConf(rc1)
+
+    val rc2 = processRegions( conf, rc1 )
+
+    processFeeds( conf, rc2 )
+  }
+
+  def processDates(rc: RunConfig): RunConfig = {
     val rc1 = rc match {
 
       // add yesterday if no date given
@@ -116,44 +137,72 @@ class Options {
       }
       case r: RunConfig => r
     }
+    rc1
+  }
 
-    val rc2 = rc1 match {
+  def processFeeds(conf: Config, rc3: RunConfig): RunConfig = {
 
-      // add all feeds if no feeds given
-      case r : RunConfig if r.feeds.isEmpty => {
+    val feedsConf = rc3.getMossoFeeds() ++ rc3.getNastFeeds()
 
-        r.copy( feeds = feedSet.toList )
-      }
-      case r : RunConfig => r
-    }
+    val feed_result = rc3.feeds.foldLeft(true)((result, x) =>
 
-    val conf = getConf( rc2 )
-    val regionConf = conf.getConfig( "tiamat.feeds.liveUri" ).root.unwrapped().keySet().toArray( Array[String]() )
-
-    val result = rc2.regions.foldLeft( true)( (result, x) =>
-
-      regionConf.contains( x ) match {
+      feedsConf.contains(x) match {
 
         // yeah, println is lame, but easy
-        case false => {System.out.println( s"${x} is not a region" )
-          false }
+        case false => {
+          System.out.println(s"${x} is not a recognized feed")
+          false
+        }
         case true => result
       }
     )
 
-    if( !result )
-      throw new Exception( "invalid region" )
+    if (!feed_result)
+      throw new IllegalArgumentException("invalid feed")
+
+    val rc4 = rc3 match {
+
+      // add feeds if no feeds given
+      case r: RunConfig if r.feeds.isEmpty => {
+
+        r.copy(feeds = feedsConf.toList )
+      }
+      case r: RunConfig => r
+    }
+
+    rc4
+  }
+
+  def processRegions(conf : Config, rc1: RunConfig): RunConfig = {
+    val rc2 = rc1.copy(config = conf)
+
+    val regionConf = conf.getConfig("tiamat.feeds.liveUri").root.unwrapped().keySet().toArray(Array[String]())
+
+    val region_result = rc2.regions.foldLeft(true)((result, x) =>
+
+      regionConf.contains(x) match {
+
+        // yeah, println is lame, but easy
+        case false => {
+          System.out.println(s"${x} is not a recognized region")
+          false
+        }
+        case true => result
+      }
+    )
+
+    if (!region_result)
+      throw new IllegalArgumentException("invalid region")
 
     val rc3 = rc2 match {
 
       // add regions if no regions given
-      case r : RunConfig if r.regions.isEmpty => {
+      case r: RunConfig if r.regions.isEmpty => {
 
-        r.copy( regions = regionConf )
+        r.copy(regions = regionConf)
       }
-      case r : RunConfig => r
+      case r: RunConfig => r
     }
-
     rc3
   }
 
