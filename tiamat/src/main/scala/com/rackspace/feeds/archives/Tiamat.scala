@@ -55,10 +55,6 @@ import scala.collection.JavaConverters
  * - pulls events from the "import" hive datastore
  * - To build execute gradle tiamat:shadowJar
  *
- *
- *  TODO:  (will add these to Jira)
- *
- * - check for preferences success file
  */
 
 object Tiamat {
