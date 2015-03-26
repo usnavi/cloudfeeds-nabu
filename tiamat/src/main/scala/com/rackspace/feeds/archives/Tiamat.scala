@@ -52,7 +52,7 @@ import scala.collection.JavaConverters
  *  Notes:
  *
  * - pulls preferences data from the "preferences" hive datastore
- * - pulls events from the "import" hive datastore
+ * - pulls events from the "entries" hive datastore
  * - To build execute gradle tiamat:shadowJar
  *
  */
