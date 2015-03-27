@@ -27,8 +27,8 @@ shadowJar {
 
     dependencies {
         exclude(dependency('org.scala-lang:scala-library:2.10.4'))
-        exclude(dependency('org.apache.spark:spark-core_2.10:1.1.1'))
-        exclude(dependency('org.apache.spark:spark-hive_2.10:1.1.1'))
+        exclude(dependency('org.apache.spark:spark-core_2.10:1.2.1'))
+        exclude(dependency('org.apache.spark:spark-hive_2.10:1.2.1'))
     }
 
     relocate 'org.apache.http', 'shaded.org.apache.http'

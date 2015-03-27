@@ -1,5 +1,6 @@
 package com.rackspace.feeds.archives
 
+import org.joda.time.{DateTimeZone, DateTime}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
@@ -13,6 +14,8 @@ import java.sql.Timestamp
 class ArchiverTest extends FunSuite with MockitoSugar {
 
   import Archiver._
+
+  val DATE_LAST_UPDATED = new DateTime( 2014, 2, 18, 21, 12, 10, 997, DateTimeZone.UTC )
 
   val CHECK_XML = """<atom:entry xmlns="http://www.w3.org/2001/XMLSchema"
                     |            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -170,7 +173,7 @@ class ArchiverTest extends FunSuite with MockitoSugar {
                                   |  <atom:updated>2014-02-18T21:12:10.997Z</atom:updated>
                                   |  <atom:published>2014-02-18T21:12:10.997Z</atom:published>
                                   |</atom:entry>
-                                  |""".stripMargin, 1 )
+                                  |""".stripMargin, DATE_LAST_UPDATED, 1 )
 
     val entry = Entry( protoKey.tenantid, protoKey.region, protoKey.feed,
       """<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns="http://wadl.dev.java.net/2009/02" xmlns:db="http://docbook.org/ns/docbook" xmlns:error="http://docs.rackspace.com/core/error" xmlns:d312e1="http://wadl.dev.java.net/2009/02" xmlns:wadl="http://wadl.dev.java.net/2009/02" xmlns:usage-summary="http://docs.rackspace.com/core/usage-summary">
@@ -212,7 +215,7 @@ class ArchiverTest extends FunSuite with MockitoSugar {
 
     val protoKey = ArchiveKey( "1234", "dfw", "feed1", "2014-02-18", "XML" )
 
-    val protoEntry = AtomEntry( CHECK_XML, 1 )
+    val protoEntry = AtomEntry( CHECK_XML, DATE_LAST_UPDATED, 1 )
 
     val row = Entry( protoKey.tenantid,
       protoKey.region,
@@ -236,7 +239,7 @@ class ArchiverTest extends FunSuite with MockitoSugar {
 
     val protoKey = ArchiveKey( "1234", "dfw", "feed1", "2014-02-18", CreateFilesFeed.XML_KEY )
 
-    val protoEntry = AtomEntry( CHECK_XML, 1 )
+    val protoEntry = AtomEntry( CHECK_XML, DATE_LAST_UPDATED, 1 )
 
     val nastId = "1234_nast"
 
@@ -260,7 +263,7 @@ class ArchiverTest extends FunSuite with MockitoSugar {
   test( "processJson() into JSON" ) {
 
     val inKey = ArchiveKey( "1234", "dfw", "feed1", "2014-02-18", CreateFilesFeed.JSON_KEY )
-    val inEntry = AtomEntry( CHECK_XML, 1 )
+    val inEntry = AtomEntry( CHECK_XML, DATE_LAST_UPDATED, 1 )
 
     val( outKey, outEntry ) = processJson( ( inKey, inEntry))
 
@@ -272,7 +275,7 @@ class ArchiverTest extends FunSuite with MockitoSugar {
   test( "processJson() into XML" ) {
 
     val inKey = ArchiveKey( "1234", "dfw", "feed1", "2014-02-18", CreateFilesFeed.XML_KEY )
-    val inEntry = AtomEntry( CHECK_XML, 1 )
+    val inEntry = AtomEntry( CHECK_XML, DATE_LAST_UPDATED, 1 )
 
     val( outKey, outEntry ) = processJson( ( inKey, inEntry))
 
