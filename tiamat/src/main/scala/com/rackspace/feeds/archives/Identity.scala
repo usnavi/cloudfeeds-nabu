@@ -20,15 +20,17 @@ import scala.io.Source
 object Identity {
 
   val ACCEPT = "Accept"
-  //  val IDENTITY_HOST = "identity.api.rackspacecloud.com"
-  val IDENTITY_HOST = "staging.identity.api.rackspacecloud.com"
-  val IDENTITY = s"https://$IDENTITY_HOST"
   val TOKEN = "X-Auth-Token"
-
   val APP_JSON = "application/json"
   val APP_XML = "application/atom+xml"
   val CONTENT_TYPE = "Content-Type"
+}
 
+class Identity( host : String, admin : String, apiKey : String, pw : String )  extends Serializable {
+
+  val identity = s"https://${host}"
+
+  import Identity._
 
   /**
    * Get impersonation token for given user.
@@ -40,11 +42,12 @@ object Identity {
   def impersonate(user: String, token: String): String = {
 
     val client = HttpClientBuilder.create.build
-    val post = new HttpPost(s"$IDENTITY/v2.0/RAX-AUTH/impersonation-tokens")
+    val post = new HttpPost(s"${identity}/v2.0/RAX-AUTH/impersonation-tokens")
     post.addHeader(ACCEPT, APP_JSON)
     post.addHeader(CONTENT_TYPE, APP_JSON)
     post.addHeader(TOKEN, token)
-    post.setEntity(new StringEntity( s"""{"RAX-AUTH:impersonation" : {"user" : {"username" : "$user"}, "expire-in-seconds":10800}}""", Charset.forName("UTF-8")))
+    post.setEntity(new StringEntity( s"""{"RAX-AUTH:impersonation" : {"user" : {"username" : "$user"}, "expire-in-seconds":10800}}""",
+      Charset.forName("UTF-8")))
 
     val resp = client.execute(post)
 
@@ -55,7 +58,7 @@ object Identity {
 
       case 200 => body.get("access").get("token").get("id").getTextValue
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        Source.fromInputStream(resp.getEntity.getContent).mkString)
+        s"Impersonate ${user}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 
@@ -63,17 +66,16 @@ object Identity {
   /**
    * Get token for given user.
    *
-   * @param admin
-   * @param apiKey
    * @return
    */
-  def getToken( admin : String, apiKey : String): String = {
+  def getToken(): String = {
 
     val client = HttpClientBuilder.create.build
-    val post = new HttpPost(s"$IDENTITY/v2.0/tokens")
+    val post = new HttpPost(s"${identity}/v2.0/tokens")
     post.addHeader(ACCEPT, APP_JSON)
     post.addHeader(CONTENT_TYPE, APP_JSON)
-    post.setEntity(new StringEntity( s"""{ "auth":{ "RAX-KSKEY:apiKeyCredentials":{ "username": "$admin", "apiKey":"$apiKey"} } }""", Charset.forName("UTF-8")))
+    post.setEntity(new StringEntity( s"""{ "auth":{ "RAX-KSKEY:apiKeyCredentials":{ "username": "$admin", "apiKey":"$apiKey"} } }""",
+      Charset.forName("UTF-8")))
 
     val resp = client.execute(post)
 
@@ -93,13 +95,12 @@ object Identity {
    *
    *
    * @param tenant
-   * @param admin
-   * @param pw
+
    * @return
    */
-  def getTenantAdmin(tenant: String, admin: String, pw : String): String = {
+  def getTenantAdmin(tenant: String): String = {
 
-    val targetHost = new HttpHost(IDENTITY_HOST, 443, "https")
+    val targetHost = new HttpHost(host, 443, "https")
     val authCache = new BasicAuthCache
     authCache.put(targetHost, new BasicScheme)
 
@@ -117,7 +118,7 @@ object Identity {
     val builder = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build).setDefaultCredentialsProvider(credsProvider)
     val client = builder.build
 
-    val get = new HttpGet(s"$IDENTITY/v1.1/mosso/$tenant")
+    val get = new HttpGet(s"${identity}/v1.1/mosso/$tenant")
     get.addHeader(ACCEPT, APP_JSON)
 
     val resp = client.execute(get, httpContext)
@@ -128,7 +129,9 @@ object Identity {
     resp.getStatusLine.getStatusCode match {
 
       case 200 => body.get("user").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode, output)
+      case _ => throw new RestException(resp.getStatusLine.getStatusCode, s"Get tenant ${tenant} admin: ${output}")
     }
   }
 }
+
+

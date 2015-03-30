@@ -55,7 +55,7 @@ ospackage {
     url = 'http://github.com/rackerlabs/cloudfeeds-nabu'
 
     // pre and post scriptlets
-    preInstall file('src/main/resources/preinstall.sh')
+    preInstall file( "$rootDir/src/main/resources/preinstall.sh" )
     //postInstall file('src/main/resources/postinstall.sh')
 
     directory(config_path, 755)

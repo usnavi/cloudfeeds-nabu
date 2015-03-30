@@ -9,10 +9,11 @@ import org.apache.commons.lang.StringUtils
 import org.apache.http.client.methods.{HttpHead, HttpPut}
 import org.apache.http.entity.AbstractHttpEntity
 import org.apache.http.impl.client.HttpClientBuilder
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.format.{ISODateTimeFormat, DateTimeFormat}
 
 import scala.io.Source
+import scala.util.Try
 
 /**
  * Groups methods related to:
@@ -29,20 +30,14 @@ object CreateFilesFeed {
   val JSON_KEY = "JSON"
   val XML_KEY = "XML"
 
-  val dayFormat = DateTimeFormat.forPattern( "yyyy-MM-DD")
+  val dayFormat = DateTimeFormat.forPattern( "yyyy-MM-dd")
 
-  val currentMap = Map( "DFW" -> "https://dfw.feeds.api.rackspacecloud.com",
-    "IAD" -> "https://iad.feeds.api.rackspacecloud.com",
-    "HKG" -> "https://hkg.feeds.api.rackspacecloud.com",
-    "LON" -> "https://lon.feeds.api.rackspacecloud.com",
-    "ORD" -> "https://ord.feeds.api.rackspacecloud.com",
-    "SYD" -> "https://syd.feeds.api.rackspacecloud.com" )
+  val feedUpdateTime = ISODateTimeFormat.dateTime().print( (new DateTime).withZone( DateTimeZone.UTC ))
 
-
-  def getFileName( key : ArchiveKey, date: DateTime ): String = {
+  def getFileName( key : ArchiveKey, date : String ): String = {
 
     val feed_name = key.feed.replace("/", "-")
-    s"${key.dc}_${feed_name}_${dayFormat.print( date )}" + getExt( key.format )
+    s"${key.region}_${feed_name}_${date}" + getExt( key.format )
   }
 
   def getExt( format : String ) : String = {
@@ -54,38 +49,34 @@ object CreateFilesFeed {
     }
   }
 
-  def writeFile( key : ArchiveKey,
-                 date: DateTime,
-                 content: Iterable[AtomEntry],
-                 prefMap: Map[String, TenantPrefs],
-                 impMap: Map[String, String],
-                 getFeedId : (String, String) => String ) = {
-
-    val tid = key.tenantid
-
-    val container = prefMap( tid ).containers(key.dc)
-    containerCheck(container, impMap( tid ))
-
-    createFeed(container, key, date, content, impMap( tid ), getFeedId )
-  }
-
+  /**
+   * Create feed and write to given file location.
+   *
+   * @param container
+   * @param key
+   * @param content
+   * @param token
+   * @param getFeedId
+   * @param feedUuid
+   * @param liveFeed
+   */
   def createFeed(container : String,
                  key: ArchiveKey,
-                 dateTime: DateTime,
                  content: Iterable[AtomEntry],
                  token: String,
-                 getFeedId: (String, String) => String ) {
+                 getFeedId: (String, String) => String,
+                 feedUuid : String,
+                 liveFeed : String ) {
 
     val client = HttpClientBuilder.create.build
 
-    val containerClean = container.endsWith( "/" ) match {
-      case true  => StringUtils.chop ( container )
-      case false => container
-    }
+    val containerClean = container.replaceFirst( "/$", "" )
 
-    val fileName = getFileName( key, dateTime )
+    val fileName = getFileName( key, key.date )
 
-    val put = new HttpPut(s"$containerClean/$fileName")
+    val path = s"$containerClean/$fileName"
+
+    val put = new HttpPut( path )
 
     put.addHeader(TOKEN, token)
     put.addHeader(CONTENT_TYPE, key.format match {
@@ -96,9 +87,9 @@ object CreateFilesFeed {
     val preface = feedPreface( containerClean,
       fileName,
       key,
-      currentMap,
       getFeedId,
-      dateTime )
+      feedUuid,
+      liveFeed )
 
     val entity = new StreamAtomFeedHttpEntity(
       key.format match {
@@ -115,7 +106,7 @@ object CreateFilesFeed {
 
       case 201 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        Source.fromInputStream(resp.getEntity.getContent).mkString)
+        s"Write ${path}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 
@@ -130,6 +121,8 @@ object CreateFilesFeed {
     // add end to preface
     val template = preface + "</feed>"
 
+
+    // TODO:  chandra wants to pull this into its own class
     val factory = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null)
     val  resolver = new URIResolver() {
 
@@ -172,6 +165,7 @@ object CreateFilesFeed {
     writer.close()
   }
 
+
   def generateXml( preface : String,
                    entries : Iterable[AtomEntry] )( out: OutputStream ) : Unit = {
 
@@ -186,27 +180,30 @@ object CreateFilesFeed {
     writer.close()
   }
 
+
   def feedPreface(container: String,
                   filename: String,
                   key: ArchiveKey,
-                  currentMap: Map[String, String],
                   getFeedId: (String, String) => String,
-                  dateTime : DateTime ): String = {
+                  feedUuid : String,
+                  liveFeed : String ): String = {
 
-    val next = getFileName( key, dateTime.minusDays( 1 ) )
-    val prev = getFileName( key, dateTime.plusDays( 1 ) )
+    val dateTime = dayFormat.parseDateTime( key.date )
+
+    val next = getFileName( key, dayFormat.print( dateTime.minusDays( 1 ) ) )
+    val prev = getFileName( key, dayFormat.print( dateTime.plusDays( 1 ) ) )
 
     s"""<?xml version="1.0" encoding="UTF-8" ?>
                   <feed xmlns="http://www.w3.org/2005/Atom"
                         xmlns:fh="http://purl.org/syndication/history/1.0">
         <fh:archive/>
-        <link rel="current" href="${currentMap(key.dc)}/${key.feed}/${getFeedId(key.tenantid, key.feed)}"/>
+        <link rel="current" href="${liveFeed}/${key.feed}/${getFeedId(key.tenantid, key.feed)}"/>
         <link rel="self" href="${container}/${filename}"/>
-        <id>TODO</id>
+        <id>${feedUuid}</id>
         <title type="text">${key.feed}</title>
         <link rel="prev-archive" href="${container}/${prev}"/>
         <link rel="next-archive" href="${container}/${next}"/>
-        <updated>TODO</updated>"""
+        <updated>${feedUpdateTime}</updated>"""
   }
 
   //
@@ -234,7 +231,7 @@ object CreateFilesFeed {
 
       case 201 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        Source.fromInputStream(resp.getEntity.getContent).mkString)
+        s"Create Container: ${uri}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 
@@ -250,7 +247,7 @@ object CreateFilesFeed {
       case 204 => true
       case 404 => false
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        Source.fromInputStream(resp.getEntity.getContent).mkString)
+        s"Container exist: ${container}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 }
