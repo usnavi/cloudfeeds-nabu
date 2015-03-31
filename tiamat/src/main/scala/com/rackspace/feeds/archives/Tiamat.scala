@@ -63,8 +63,6 @@ object Tiamat {
 
   val logger = LoggerFactory.getLogger(getClass)
 
-  val isoFormat = ISODateTimeFormat.basicDateTime()
-
   /**
    * The method run by Spark to execute the job.
    *
@@ -132,15 +130,12 @@ object ArchiveKey {
 
 
 // TODO: looks like Timestamp was fixed in 1.2
-case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : Long ) extends Ordered[AtomEntry] {
+case class AtomEntry( entrybody : String, datelastupdated : DateTime, id : Long ) extends Ordered[AtomEntry] {
 
   import scala.math.Ordered.orderingToOrdered
 
   def compare(that: AtomEntry): Int = {
 
-
-    id.compare( that.id )
-    /*
     import Joda._
 
     datelastupdated.compare( that.datelastupdated ) match {
@@ -148,7 +143,5 @@ case class AtomEntry( entrybody : String, /*datelastupdated : DateTime, */ id : 
       case 0 => id.compare( that.id )
       case c => c
     }
-
-    */
   }
 }

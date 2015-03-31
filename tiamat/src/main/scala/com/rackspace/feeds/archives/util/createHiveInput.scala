@@ -40,6 +40,9 @@ object CreateHiveInput {
 
     val num_feeds_user = (( total_entries / ( feeds.length + nasty_feeds.length ) ) * percent_single_user).toInt
 
+    // to test that timestamps are ordered and not indexes
+    val total = feeds.size * users.size * num_feeds_user
+
     feeds.zipWithIndex.foreach { case( feed, fI )=>
 
       users.zipWithIndex.foreach { case( u, uI ) =>

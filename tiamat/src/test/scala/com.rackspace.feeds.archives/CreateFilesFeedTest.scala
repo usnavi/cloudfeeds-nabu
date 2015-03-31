@@ -3,6 +3,7 @@ package com.rackspace.feeds.archives
 import java.io.ByteArrayOutputStream
 
 import org.codehaus.jackson.map.ObjectMapper
+import org.joda.time.{DateTimeZone, DateTime}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
@@ -15,6 +16,9 @@ class CreateFilesFeedTest extends FunSuite {
 
   import CreateFilesFeed._
   import Archiver._
+
+  val DATE_LAST_UPDATED_1 = new DateTime( 2014, 2, 18, 21, 12, 10, 997, DateTimeZone.UTC )
+  val DATE_LAST_UPDATED_0 = new DateTime( 2014, 2, 18, 21, 12, 10, 0, DateTimeZone.UTC )
 
   val PREFACE = """<?xml version="1.0" encoding="UTF-8" ?>
       <feed xmlns="http://www.w3.org/2005/Atom"
@@ -116,7 +120,7 @@ class CreateFilesFeedTest extends FunSuite {
                        |  <atom:updated>2014-02-18T21:12:10.997Z</atom:updated>
                        |  <atom:published>2014-02-18T21:12:10.997Z</atom:published>
                        |</atom:entry>
-                       |""".stripMargin, 1 ),
+                       |""".stripMargin, DATE_LAST_UPDATED_1, 1 ),
       AtomEntry( """<atom:entry xmlns:usage-summary="http://docs.rackspace.com/core/usage-summary"
                    |            xmlns:wadl="http://wadl.dev.java.net/2009/02"
                    |            xmlns:d312e1="http://wadl.dev.java.net/2009/02"
@@ -161,7 +165,7 @@ class CreateFilesFeedTest extends FunSuite {
                    |  <atom:updated>2014-02-18T21:12:10.997Z</atom:updated>
                    |  <atom:published>2014-02-18T21:12:10.997Z</atom:published>
                    |</atom:entry>
-                   |""".stripMargin, 0) )
+                   |""".stripMargin, DATE_LAST_UPDATED_0, 0) )
   }
 
   def getJsonEvents() : Iterable[AtomEntry] = {
@@ -217,7 +221,7 @@ class CreateFilesFeedTest extends FunSuite {
                        |        "id": "urn:uuid:1",
                        |        "title": "Widget"
                        |    }
-                       |""".stripMargin, 1 ),
+                       |""".stripMargin, DATE_LAST_UPDATED_1, 1 ),
       AtomEntry( """{
                    |        "category": [
                    |            {
@@ -269,7 +273,7 @@ class CreateFilesFeedTest extends FunSuite {
                    |        "id": "urn:uuid:e53d007a-fc23-11e1-975c-cfa6b29bb814",
                    |        "title": "Widget"
                    |    }
-                   |""".stripMargin, 0) )
+                   |""".stripMargin, DATE_LAST_UPDATED_0, 0) )
   }
 
 

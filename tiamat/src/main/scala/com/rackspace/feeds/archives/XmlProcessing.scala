@@ -90,7 +90,7 @@ object XmlProcessing {
     (transformer.asInstanceOf[Controller]).setInitialTemplate( "main" )
     transformer.transform( source, result )
 
-    AtomEntry(  makeArrayEntry( out.toString( "UTF-8" ) ), entry.id )
+    AtomEntry(  makeArrayEntry( out.toString( "UTF-8" ) ), entry.datelastupdated, entry.id )
   }
 
   def makeArrayEntry(json: String): String = {

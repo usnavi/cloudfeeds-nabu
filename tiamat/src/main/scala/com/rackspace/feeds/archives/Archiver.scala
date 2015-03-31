@@ -1,5 +1,6 @@
 package com.rackspace.feeds.archives
 
+import java.sql.Timestamp
 import java.util.UUID
 
 import org.apache.spark.rdd.RDD
@@ -7,6 +8,7 @@ import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql._
 import org.apache.spark._
 import org.apache.spark.SparkContext._
+import org.joda.time.{DateTimeZone, DateTime}
 
 import org.slf4j.LoggerFactory
 
@@ -308,7 +310,7 @@ object Archiver {
       row.getString( 1 ),
       row.getString( 2 ),
       row.getString( 3 ),
-      null, // TODO: looks like Timestamp was fixed in 1.2
+      row( 4 ).asInstanceOf[Timestamp],
       row.getLong( 5 ),
       row.getString( 6 ),
       row.getString( 7 )
@@ -365,7 +367,7 @@ object Archiver {
 
       prefMap( tenantid ).formats.flatMap( f =>
         List(( ArchiveKey( tenantid, entry.region, entry.feed, entry.date, f ),
-          AtomEntry( entrybody, /*isoFormat.parseDateTime( row.getString(4)), */ entry.id))))
+          AtomEntry( entrybody, new DateTime( entry.datelastupdated.getTime, DateTimeZone.UTC ), entry.id))))
     }
   }
 
