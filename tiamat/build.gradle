@@ -93,7 +93,7 @@ ospackage {
     directory(config_path, 755)
     directory(install_path, 755)
     directory(install_path + '/lib', 755)
-
+    directory(install_path + '/bin', 755)
 
     from('src/main/resources') {
         into config_path
@@ -111,6 +111,14 @@ ospackage {
         into install_path + '/lib'
         user app_user
         permissionGroup app_group
+    }
+
+    // bin
+    from('src/main/resources/tiamat.sh') {
+        into install_path + '/bin'
+        user app_user
+        permissionGroup app_group
+        fileMode 0755
     }
 }
 
