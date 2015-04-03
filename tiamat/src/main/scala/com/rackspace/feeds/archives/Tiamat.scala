@@ -20,7 +20,7 @@ import scala.collection.JavaConverters
  * Usage: com.rackspace.feeds.archives.Tiamat [options]
  *
  * -c <value> | --config <value>
- *       Config file path, default to /etc/cloudfeeds-tiamat/conf/tiamat.conf
+ *       Config file path, default to /etc/cloudfeeds-nabu/tiamat/tiamat.conf
  * -f <value> | --feeds <value>
  *       List feed names (comma-separated).  Default is to archive all archivable feeds.
  * -d <value> | --dates <value>
