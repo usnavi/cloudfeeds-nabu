@@ -34,7 +34,3 @@ hadoop fs -copyFromLocal -f ${USMU_ETC_DIR}/hive-site.xml ${USMU_HDFS_DIR}/feeds
 hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/copy_to_entries.q ${USMU_HDFS_DIR}/feedsImport/
 hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/feedsImport-wf.xml ${USMU_HDFS_DIR}/feedsImport/workflow.xml
 
-# copying files related to the PrefsImport workflow
-hadoop fs -copyFromLocal -f ${USMU_ETC_DIR}/hive-site.xml ${USMU_HDFS_DIR}/prefsImport/
-hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/load_prefs.q ${USMU_HDFS_DIR}/prefsImport/
-hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/prefsImport-wf.xml ${USMU_HDFS_DIR}/prefsImport/workflow.xml

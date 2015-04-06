@@ -67,6 +67,7 @@ ospackage {
         include '*-coordinator.xml'
         include '*-wf.xml'
         include '*.q'
+        include '*.ddl'
         // set permissions
         user app_user
         permissionGroup app_group
