@@ -24,6 +24,7 @@ mainClassName = 'com.rackspace.feeds.archives.Tiamat'
 shadowJar {
 
     dependsOn 'test'
+    zip64 true
 
     dependencies {
         exclude(dependency('org.scala-lang:scala-library'))
@@ -50,6 +51,7 @@ archivesBaseName = custom.parentProject + '-' + project.name
 def package_name = 'cloudfeeds-nabu'
 def app_name = 'tiamat'
 def version_clean = version.minus("-SNAPSHOT")
+def version_og = version
 def install_path = '/opt/' + package_name + '/' + app_name
 def config_path = '/etc/' + package_name + '/' + app_name
 def app_user = 'cloudfeeds'
@@ -121,7 +123,7 @@ ospackage {
     }
 
     // check to see which jar got built for our symlink so the init script works
-    def version_jar = packageName + '-' + version_clean + '-all.jar'
+    def version_jar = packageName + '-' + version_og + '-all.jar'
     // println version_jar
 
     // create a symlink to named <app_name>.jar to the versioned jar
