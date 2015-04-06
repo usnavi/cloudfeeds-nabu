@@ -24,7 +24,6 @@ mainClassName = 'com.rackspace.feeds.archives.Tiamat'
 shadowJar {
 
     dependsOn 'test'
-    zip64 true
 
     dependencies {
         exclude(dependency('org.scala-lang:scala-library'))
