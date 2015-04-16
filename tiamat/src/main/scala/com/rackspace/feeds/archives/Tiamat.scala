@@ -88,7 +88,13 @@ object Tiamat {
 
         import ArchiveKey._
 
-        logger.error(s"ERROR: ${archiveKeyToString(e.archiveKey)}: ${e.throwable.getMessage}", e.throwable)
+        val message = e.message match {
+
+          case s if !s.isEmpty => s" ${s}:"
+          case _ => ""
+        }
+
+        logger.error(s"ERROR: ${archiveKeyToString(e.archiveKey)}:${message} ${e.throwable.getMessage}", e.throwable)
       }
       )
       throw new Exception("Encountered errors. See log for details.")
@@ -103,7 +109,7 @@ object Joda {
 
 case class RestException( code : Int, message : String ) extends Throwable( s"""$code: $message""" )
 
-case class TiamatError( archiveKey : ArchiveKey, throwable : Throwable )
+case class TiamatError( archiveKey : ArchiveKey, throwable : Throwable, message : String = "" )
 
 case class Entry ( tenantid : String,
                    region : String,

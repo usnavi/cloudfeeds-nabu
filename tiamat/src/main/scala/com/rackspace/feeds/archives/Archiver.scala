@@ -260,8 +260,8 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
     }
     catch {
 
-      case th : Throwable => Some( TiamatError( key, th ) )
-
+      case e : RestException => Some( TiamatError( key, e ) )
+      case th : Throwable => Some( TiamatError( key, th, "TIAMAT007 - Unable to read/write to Cloud Files" ) )
     }
   }
 }

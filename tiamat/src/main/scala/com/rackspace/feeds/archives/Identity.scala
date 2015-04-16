@@ -58,7 +58,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
       case 200 => body.get("access").get("token").get("id").getTextValue
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"Impersonate ${user}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        s"TIAMAT001: Unable to impersonate '${user}': ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 
@@ -85,7 +85,8 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     resp.getStatusLine.getStatusCode match {
 
       case 200 => body.get("access").get("token").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode, output)
+      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
+        s"TIAMAT003: Unable to get admin token: ${output}")
     }
   }
 
@@ -129,7 +130,8 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     resp.getStatusLine.getStatusCode match {
 
       case 200 => body.get("user").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode, s"Get tenant ${tenant} admin: ${output}")
+      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
+        s"TIAMAT003: Unabled to get admin user for tenant '${tenant}': ${output}")
     }
   }
 }

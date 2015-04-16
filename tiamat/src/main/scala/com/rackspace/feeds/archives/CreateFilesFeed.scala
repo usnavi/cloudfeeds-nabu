@@ -106,7 +106,7 @@ object CreateFilesFeed {
 
       case 201 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"Write ${path}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        s"TIAMAT004: Unable to write '${path}': ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 
@@ -231,7 +231,7 @@ object CreateFilesFeed {
 
       case 201 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"Create Container: ${uri}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        s"TIAMAT005: Unable to create container: '${uri}': ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 
@@ -247,7 +247,7 @@ object CreateFilesFeed {
       case 204 => true
       case 404 => false
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"Container exist: ${container}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        s"TIAMAT006: Unable to determine if container '${container}' exists: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
     }
   }
 }
