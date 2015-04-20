@@ -10,32 +10,24 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters
 
 /**
- * spark-submit  --class com.rackspace.feeds.archives.Tiamat --master yarn-cluster --num-executors 3
- * --executor-memory 512m
- * --jars apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-api-jdo-3.2.1.jar,apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-core-3.2.2.jar,apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-rdbms-3.2.1.jar,/home/rona6028/apps/spark-1.1.1-bin-hadoop2.4/conf/hive-site.xml
- * /opt/cloudfeeds-nabu/tiamat/lib/cloudfeeds-nabu-tiamat-1.0.0-SNAPSHOT-all.jar  -c /home/rona6028/temp-staging.conf -d 2015-01-27
- *
- *
  * Archives atom events from the Cloud Feeds Hadoop cluster into Cloud Files on a per-tenant basis.
  *
  * Usage: com.rackspace.feeds.archives.Tiamat [options]
  *
  * -c <value> | --config <value>
  *       Config file path, default to /etc/cloudfeeds-nabu/tiamat/tiamat.conf
- * -f <value> | --feeds <value>
- *       List feed names (comma-separated).  Default is to archive all archivable feeds.
  * -d <value> | --dates <value>
  *       List of dates in the format of yyyy-MM-dd (comma-separated).  Default is yesterday's date.
- * -t <value> | --tenants <value>
- *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
+ * -f <value> | --feeds <value>
+ *       List feed names (comma-separated).  Default is to archive all archivable feeds.
+ * -s <value> | --success <value>
+ *       Location & name of the last success run file.  Default is location is /var/log/cloudfeeds-nabu/tiamat/last_success.txt
  * -r <value> | --regions <value>
  *       List of regions (common-separated).  Default is all regions.
+ * -t <value> | --tenants <value>
+ *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
  * --help
  *       Show this.
- *
- * If the contents of /etc/cloudfeeds-nabu/tiamat/logback.xml are modified, they need to be loaded
- * at runtime.
- *   -Dlogback.configurationFile=<path to logback.xml>
  *
  * Process:
  *
