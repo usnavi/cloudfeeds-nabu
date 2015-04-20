@@ -1,5 +1,6 @@
 package com.rackspace.feeds.archives
 
+import java.io.FileWriter
 import java.sql.Timestamp
 
 import org.joda.time.{DateTimeZone, DateTimeComparator, DateTime}
@@ -29,7 +30,6 @@ import scala.collection.JavaConverters
  *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
  * -r <value> | --regions <value>
  *       List of regions (common-separated).  Default is all regions.
- *
  * --help
  *       Show this.
  *
@@ -75,10 +75,29 @@ object Tiamat {
     val runConfig = options.parseOptions( args)
     logger.debug( runConfig )
 
-    val archiver = new Archiver( runConfig )
-    val errors = archiver.run()
+    try {
+      val archiver = new Archiver(runConfig)
+      val errors = archiver.run()
+      processErrors(errors)
+    }
+    catch {
+      case th : Throwable => {
+        logger.error(th.getMessage)
 
-    processErrors( errors )
+        throw th
+      }
+    }
+
+    writeLastRun( runConfig.lastSuccessPath )
+  }
+
+  def writeLastRun( path : String ) = {
+
+    val writer = new FileWriter( path )
+
+    val date = ISODateTimeFormat.dateTime().print( new DateTime() )
+    writer.write( date )
+    writer.close()
   }
 
   def processErrors(errors: Iterable[TiamatError]) {
