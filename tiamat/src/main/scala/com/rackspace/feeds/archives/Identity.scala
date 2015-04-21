@@ -14,6 +14,8 @@ import org.codehaus.jackson.map.ObjectMapper
 
 import scala.io.Source
 
+import Errors._
+
 /**
  * Groups methods related to interacting with Identity API.
  */
@@ -58,7 +60,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
       case 200 => body.get("access").get("token").get("id").getTextValue
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"TIAMAT001: Unable to impersonate '${user}': ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        IMPERSONATE( user, Source.fromInputStream(resp.getEntity.getContent).mkString ))
     }
   }
 
@@ -86,7 +88,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
       case 200 => body.get("access").get("token").get("id").getTextValue
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"TIAMAT003: Unable to get admin token: ${output}")
+        ADMIN_TOKEN( output ))
     }
   }
 
@@ -131,7 +133,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
       case 200 => body.get("user").get("id").getTextValue
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"TIAMAT003: Unabled to get admin user for tenant '${tenant}': ${output}")
+        ADMIN_USER( tenant, output ) )
     }
   }
 }

@@ -5,7 +5,6 @@ import javax.xml.transform.stream.{StreamResult, StreamSource}
 import javax.xml.transform.{URIResolver, TransformerFactory}
 
 import net.sf.saxon.Controller
-import org.apache.commons.lang.StringUtils
 import org.apache.http.client.methods.{HttpHead, HttpPut}
 import org.apache.http.entity.AbstractHttpEntity
 import org.apache.http.impl.client.HttpClientBuilder
@@ -13,7 +12,8 @@ import org.joda.time.{DateTimeZone, DateTime}
 import org.joda.time.format.{ISODateTimeFormat, DateTimeFormat}
 
 import scala.io.Source
-import scala.util.Try
+
+import Errors._
 
 /**
  * Groups methods related to:
@@ -106,7 +106,7 @@ object CreateFilesFeed {
 
       case 201 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"TIAMAT004: Unable to write '${path}': ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        WRITE( path, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
     }
   }
 
@@ -231,7 +231,7 @@ object CreateFilesFeed {
 
       case 201 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"TIAMAT005: Unable to create container: '${uri}': ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        CREATE_CONTAINER( uri, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
     }
   }
 
@@ -247,7 +247,7 @@ object CreateFilesFeed {
       case 204 => true
       case 404 => false
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"TIAMAT006: Unable to determine if container '${container}' exists: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        CONTAINER_EXISTS( container, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
     }
   }
 }
