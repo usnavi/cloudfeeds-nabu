@@ -60,6 +60,10 @@
                  <name>hdfsDumpDir</name>
                  <value>${coord:dataIn('coordInput1')}</value>
              </property>
+             <property>
+                 <name>successDir</name>
+                 <value>${successDir}</value>
+             </property>
          </configuration>
       </workflow>
    </action>     
