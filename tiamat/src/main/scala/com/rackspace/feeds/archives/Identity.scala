@@ -14,6 +14,8 @@ import org.codehaus.jackson.map.ObjectMapper
 
 import scala.io.Source
 
+import Errors._
+
 /**
  * Groups methods related to interacting with Identity API.
  */
@@ -58,7 +60,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
       case 200 => body.get("access").get("token").get("id").getTextValue
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        s"Impersonate ${user}: ${Source.fromInputStream(resp.getEntity.getContent).mkString}")
+        IMPERSONATE( user, Source.fromInputStream(resp.getEntity.getContent).mkString ))
     }
   }
 
@@ -85,7 +87,8 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     resp.getStatusLine.getStatusCode match {
 
       case 200 => body.get("access").get("token").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode, output)
+      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
+        ADMIN_TOKEN( output ))
     }
   }
 
@@ -129,7 +132,8 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     resp.getStatusLine.getStatusCode match {
 
       case 200 => body.get("user").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode, s"Get tenant ${tenant} admin: ${output}")
+      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
+        ADMIN_USER( tenant, output ) )
     }
   }
 }

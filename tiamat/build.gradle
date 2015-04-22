@@ -54,6 +54,7 @@ def version_clean = version.minus("-SNAPSHOT")
 def version_og = version
 def install_path = '/opt/' + package_name + '/' + app_name
 def config_path = '/etc/' + package_name + '/' + app_name
+def log_path = '/var/log/' + package_name + '/' + app_name
 def app_user = 'cloudfeeds'
 def app_group = 'cloudfeeds'
 
@@ -98,8 +99,8 @@ ospackage {
 
     from('src/main/resources') {
         into config_path
-        include 'logback.xml'
         include 'tiamat.conf'
+        include 'log4j.properties'
         // set permissions
         user app_user
         permissionGroup app_group
@@ -128,6 +129,10 @@ ospackage {
 
     // create a symlink to named <app_name>.jar to the versioned jar
     link( install_path + '/lib/' + packageName + '.jar', install_path + '/lib/' + version_jar)
+
+    // looks like its not straightforward to create a directory with no files.  This works, though.
+    // https://github.com/nebula-plugins/gradle-ospackage-plugin/issues/14
+    postInstall 'mkdir -p ' + log_path + '; chown -R ' + app_user + ':' + app_group + ' ' + log_path
 }
 
 // task to create RPM

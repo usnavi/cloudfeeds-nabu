@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters
 
+import Errors._
+
 
 /**
  * Takes in the application's configurations and actually runs the archiving process.
@@ -260,8 +262,8 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
     }
     catch {
 
-      case th : Throwable => Some( TiamatError( key, th ) )
-
+      case e : RestException => Some( TiamatError( key, e ) )
+      case th : Throwable => Some( TiamatError( key, th, NO_CLOUD_FILES ) )
     }
   }
 }

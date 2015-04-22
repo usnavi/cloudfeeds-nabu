@@ -1,5 +1,6 @@
 package com.rackspace.feeds.archives
 
+import java.io.FileWriter
 import java.sql.Timestamp
 
 import org.joda.time.{DateTimeZone, DateTimeComparator, DateTime}
@@ -9,33 +10,24 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters
 
 /**
- * spark-submit  --class com.rackspace.feeds.archives.Tiamat --master yarn-cluster --num-executors 3
- * --executor-memory 512m
- * --jars apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-api-jdo-3.2.1.jar,apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-core-3.2.2.jar,apps/spark-1.1.1-bin-hadoop2.4/lib/datanucleus-rdbms-3.2.1.jar,/home/rona6028/apps/spark-1.1.1-bin-hadoop2.4/conf/hive-site.xml
- * /opt/cloudfeeds-nabu/tiamat/lib/cloudfeeds-nabu-tiamat-1.0.0-SNAPSHOT-all.jar  -c /home/rona6028/temp-staging.conf -d 2015-01-27
- *
- *
  * Archives atom events from the Cloud Feeds Hadoop cluster into Cloud Files on a per-tenant basis.
  *
  * Usage: com.rackspace.feeds.archives.Tiamat [options]
  *
  * -c <value> | --config <value>
  *       Config file path, default to /etc/cloudfeeds-nabu/tiamat/tiamat.conf
- * -f <value> | --feeds <value>
- *       List feed names (comma-separated).  Default is to archive all archivable feeds.
  * -d <value> | --dates <value>
  *       List of dates in the format of yyyy-MM-dd (comma-separated).  Default is yesterday's date.
- * -t <value> | --tenants <value>
- *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
+ * -f <value> | --feeds <value>
+ *       List feed names (comma-separated).  Default is to archive all archivable feeds.
+ * -s <value> | --success <value>
+ *       Location & name of the last success run file.  Default is location is /var/log/cloudfeeds-nabu/tiamat/last_success.txt
  * -r <value> | --regions <value>
  *       List of regions (common-separated).  Default is all regions.
- *
+ * -t <value> | --tenants <value>
+ *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
  * --help
  *       Show this.
- *
- * If the contents of /etc/cloudfeeds-nabu/tiamat/logback.xml are modified, they need to be loaded
- * at runtime.
- *   -Dlogback.configurationFile=<path to logback.xml>
  *
  * Process:
  *
@@ -75,10 +67,29 @@ object Tiamat {
     val runConfig = options.parseOptions( args)
     logger.debug( runConfig )
 
-    val archiver = new Archiver( runConfig )
-    val errors = archiver.run()
+    try {
+      val archiver = new Archiver(runConfig)
+      val errors = archiver.run()
+      processErrors(errors)
+    }
+    catch {
+      case th : Throwable => {
+        logger.error(th.getMessage)
 
-    processErrors( errors )
+        throw th
+      }
+    }
+
+    writeLastRun( runConfig.lastSuccessPath )
+  }
+
+  def writeLastRun( path : String ) = {
+
+    val writer = new FileWriter( path )
+
+    val date = ISODateTimeFormat.dateTime().print( new DateTime() )
+    writer.write( date )
+    writer.close()
   }
 
   def processErrors(errors: Iterable[TiamatError]) {
@@ -88,7 +99,13 @@ object Tiamat {
 
         import ArchiveKey._
 
-        logger.error(s"ERROR: ${archiveKeyToString(e.archiveKey)}: ${e.throwable.getMessage}", e.throwable)
+        val message = e.message match {
+
+          case s if !s.isEmpty => s" ${s}:"
+          case _ => ""
+        }
+
+        logger.error(s"ERROR: ${archiveKeyToString(e.archiveKey)}:${message} ${e.throwable.getMessage}", e.throwable)
       }
       )
       throw new Exception("Encountered errors. See log for details.")
@@ -103,7 +120,7 @@ object Joda {
 
 case class RestException( code : Int, message : String ) extends Throwable( s"""$code: $message""" )
 
-case class TiamatError( archiveKey : ArchiveKey, throwable : Throwable )
+case class TiamatError( archiveKey : ArchiveKey, throwable : Throwable, message : String = "" )
 
 case class Entry ( tenantid : String,
                    region : String,

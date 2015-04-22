@@ -14,7 +14,8 @@ case class RunConfig( configPath : String = Options.CONF,
                       dates : Seq[DateTime] = Seq[DateTime](),
                       tenantIds : Seq[String] = Seq[String](),
                       regions : Seq[String] = Seq[String](),
-                      config : Config = ConfigFactory.empty() ) {
+                      config : Config = ConfigFactory.empty(),
+                      lastSuccessPath : String = Options.LAST_SUCCESS ) {
 
   def getMossoFeeds() : Set[String] = {
 
@@ -48,7 +49,7 @@ object RunConfig {
 object Options {
 
   val CONF = "/etc/cloudfeeds-nabu/tiamat/tiamat.conf"
-
+  val LAST_SUCCESS = "/var/log/cloudfeeds-nabu/tiamat/last_success.txt"
 }
 
 /**
@@ -68,7 +69,7 @@ class Options {
 
     val parser = new OptionParser[RunConfig]("com.rackspace.feeds.archives.Tiamat") {
 
-      head("Tiamat", "0.9")
+      head( "Tiamat" )
 
       opt[String]('c', "config") action { (x, c) =>
 
@@ -82,33 +83,33 @@ class Options {
         }
       } text ( s"Config file path, default to ${CONF}" )
 
-      opt[Seq[String]]('f', "feeds") action { (x, c) =>
-
-        c.copy(feeds = x)
-      } text ("List feed names (comma-separated).  Default is to archive all archivable feeds.")
-
       opt[Seq[DateTime]]('d', "dates") action { (x, c) =>
 
         c.copy(dates = x)
       } text ("List of dates in the format of yyyy-MM-dd (comma-separated).  Default is yesterday's date.")
 
-      opt[Seq[String]]('t', "tenants") action { (x, c) =>
+      opt[Seq[String]]('f', "feeds") action { (x, c) =>
 
-        c.copy(tenantIds = x)
-      } text ("List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.")
+        c.copy(feeds = x)
+      } text ("List feed names (comma-separated).  Default is to archive all archivable feeds.")
+
+      opt[String]( 's', "success" ) action { (x, c) =>
+
+        c.copy( lastSuccessPath = x )
+      } text ( s"Location & name of the last success run file.  Default is location is ${LAST_SUCCESS}" )
 
       opt[Seq[String]]('r', "regions") action { (x, c) =>
 
         c.copy( regions = x)
       } text( "List of regions (common-separated).  Default is all regions." )
 
+      opt[Seq[String]]('t', "tenants") action { (x, c) =>
+
+        c.copy(tenantIds = x)
+      } text ("List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.")
+
       help("help") text ( "Show this." )
 
-      note( """|
-               |If the contents of /etc/cloudfeeds-nabu/tiamat/logback.xml are modified, they need to be loaded
-               |at runtime.
-               |
-               |  -Dlogback.configurationFile=<path to logback.xml>""".stripMargin )
     }
 
     val rc = parser.parse(args, RunConfig()) match {
