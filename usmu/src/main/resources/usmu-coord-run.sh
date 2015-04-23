@@ -49,6 +49,7 @@ do
         -DcoordAppName=FeedsImport-${aRegion} \
         -DwatchDir=${FEEDS_DUMP_DIR}/${aRegion} \
         -DworkflowPath=${USMU_HDFS_DIR}/feedsImport \
+        -DsuccessDir=${USMU_SUCCESS_DIR} \
         -Dregion=$aRegion -DemailToAddress="${ERROR_EMAIL}" \
         -DstartTime="${START_TIME}" -DendTime="${END_TIME}"
 done
