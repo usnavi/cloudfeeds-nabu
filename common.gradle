@@ -1,4 +1,4 @@
 ext.custom = [
-  group:          'com.rackspace.prefs.cloudfeeds.nabu',
+  group:          'com.rackspace.feeds.nabu',
   parentProject:  'cloudfeeds-nabu'
 ]
