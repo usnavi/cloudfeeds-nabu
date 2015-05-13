@@ -78,7 +78,7 @@ artifacts {
     archives file: file('usmu/build/distributions/' + usmu_artifact), name: usmu_artifact, type: 'rpm', classifier: 'usmu'
 
     def tiamat_artifact = custom.parentProject + '-tiamat-' + project.version.minus('-SNAPSHOT') + '-1.noarch.rpm'
-    archives file: file('tiamat/build/distributions/' + tiamat_artifact), name: usmu_artifact, type: 'rpm', classifier: 'usmu'
+    archives file: file('tiamat/build/distributions/' + tiamat_artifact), name: tiamat_artifact, type: 'rpm', classifier: 'tiamat'
 }
 
 uploadArchives {
