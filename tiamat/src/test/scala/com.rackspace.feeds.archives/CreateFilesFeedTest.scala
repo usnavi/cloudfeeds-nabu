@@ -279,7 +279,7 @@ class CreateFilesFeedTest extends FunSuite {
 
   test( "generateJson() - with events" ) {
 
-    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "container1/filename1"}, {"rel" : "prev-archive","href" : "container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "container1/region1_feed1_2014-02-17.xml"}],"archive" : "", "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME", "entry": [{
+    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "container1/filename1"}, {"rel" : "prev-archive","href" : "container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "container1/region1_feed1_2014-02-17.xml"}],"archive" :{ "@type" : "http://purl.org/syndication/history/1.0" }, "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME", "entry": [{
                      |        "category": [
                      |            {
                      |                "term": "tid:1234"
@@ -397,7 +397,7 @@ class CreateFilesFeedTest extends FunSuite {
 
   test( "generateJson() - empty feed" ) {
 
-    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "container1/filename1"}, {"rel" : "prev-archive","href" : "container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "container1/region1_feed1_2014-02-17.xml"}],"archive" : "", "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME"}}""".stripMargin
+    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "container1/filename1"}, {"rel" : "prev-archive","href" : "container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "container1/region1_feed1_2014-02-17.xml"}],"archive" :{ "@type" : "http://purl.org/syndication/history/1.0" }, "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME"}}""".stripMargin
 
     val output = new ByteArrayOutputStream()
 
