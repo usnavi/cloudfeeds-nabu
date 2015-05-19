@@ -78,6 +78,7 @@ ospackage {
         into install_path + '/bin'
         include 'usmu-*.sh'
         include '*.ddl'
+        include 'monitor-*.sh'
         // set permissions
         user app_user
         permissionGroup app_group
