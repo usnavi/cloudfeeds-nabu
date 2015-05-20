@@ -17,8 +17,9 @@ region=$1
 now=$(date +%k%M)
 
 # exit unless current time is in the right window
-if [ $now -lt 530 -o $now -gt 630 ]; then
-    echo "Time is not between 5:30 AM UTC and 6:30 AM UTC. Aborting."
+if [ $now -lt 1400 -o $now -gt 1800 ]; then
+    echo "Time is not between 2:00 PM UTC and 6:00 PM UTC. Skipping checks."
+    echo 0
     exit 0
 fi
 
@@ -35,7 +36,9 @@ rc=$?
 if [ $rc -eq 0 ]; then
     # SUCCESS
     echo 0
+    exit 0
 else
     # FAILURE
     echo 1
+    exit 1
 fi
