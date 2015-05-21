@@ -18,7 +18,6 @@ now=$(date +%k%M)
 
 # exit unless current time is in the right window
 if [ $now -lt 1400 -o $now -gt 1800 ]; then
-    echo "Time is not between 2:00 PM UTC and 6:00 PM UTC. Skipping checks."
     echo 0
     exit 0
 fi
