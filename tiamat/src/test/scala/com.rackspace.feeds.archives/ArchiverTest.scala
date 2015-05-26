@@ -1,5 +1,9 @@
 package com.rackspace.feeds.archives
 
+import java.io.File
+
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.{SparkContext, SparkConf}
 import org.joda.time.{DateTimeZone, DateTime}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
@@ -15,6 +19,16 @@ class ArchiverTest extends FunSuite with MockitoSugar {
 
   import Archiver._
 
+  val CONF = "src/test/resources/test.conf"
+
+  def getConf( path : String = CONF ) : String = {
+
+    new File( "." ).getCanonicalPath.split( "/" ).last match {
+      case "tiamat" => path
+      case _ => "tiamat/" + path
+    }
+  }
+  
   val DATE_LAST_UPDATED = new DateTime( 2014, 2, 18, 21, 12, 10, 997, DateTimeZone.UTC )
 
   val CHECK_XML = """<atom:entry xmlns="http://www.w3.org/2001/XMLSchema"
@@ -282,5 +296,35 @@ class ArchiverTest extends FunSuite with MockitoSugar {
     assert( inKey == outKey )
     assert( inEntry.id == outEntry.id )
     assert( CHECK_XML.replaceAll( "\\s+", " " ) == outEntry.entrybody.replaceAll( "\\s+", " " ))
+  }
+  
+  test("get constructed success file paths") {
+
+    val tids = Set( "tid1", "tid2" )
+    val regions = Set( "dfw", "iad" )
+    val runDates = List(DateTime.now, DateTime.now.minusDays(1))
+    
+    val options = new Options()
+    val runConfig = options.parseOptions( Array("-c", getConf(),
+      "-f", "feed1/events,feed2/events",
+      "-d", s"${CreateFilesFeed.dayFormat.print(runDates(0))},${CreateFilesFeed.dayFormat.print(runDates(1))}",
+      "-t", tids.mkString( "," ),
+      "-r", regions.mkString( "," )))
+
+    val archiver = new Archiver(runConfig) {
+      override lazy val token = "dummy-token"
+      override lazy val spark = mock[SparkContext]
+      override lazy val hive = mock[HiveContext]
+      override def makePrefs() : (Map[String, TenantPrefs], Map[String, String], Iterable[TiamatError]) = {
+        (null, null, null)
+      }
+    }
+    
+    val successFilePathSet = archiver.getSuccessFilePaths
+    
+    for (region <- regions ; runDate <- runDates) {
+      assert(successFilePathSet.contains(s"/user/cloudfeeds/cloudfeeds-nabu/usmu/run/$region/${CreateFilesFeed.dayFormat.print(runDate)}/success.txt"))
+      assert(successFilePathSet.contains(s"/user/cloudfeeds/prefs_dump/${CreateFilesFeed.dayFormat.print(runDate)}/_SUCCESS"))
+    }
   }
 }

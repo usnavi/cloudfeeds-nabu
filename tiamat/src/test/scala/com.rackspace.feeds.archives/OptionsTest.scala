@@ -108,8 +108,16 @@ class OptionsTest extends FunSuite {
     assert( tids &~ config.tenantIds.toSet isEmpty )
     assert( regs &~ config.regions.toSet isEmpty )
     assert( dates &~ config.dates.toSet isEmpty )
+    assert(config.skipSuccessFileCheck == false)
   }
 
+  test("skip success file check") {
+    val options = new Options()
+    val config = options.parseOptions( Array("-c", getConf(), "--skipSuccessFileCheck") )
+
+    assert(config.skipSuccessFileCheck == true)
+  }
+  
   def getFeeds( config : RunConfig ) : Set[String] = {
 
     config.getMossoFeeds() ++ config.getNastFeeds()

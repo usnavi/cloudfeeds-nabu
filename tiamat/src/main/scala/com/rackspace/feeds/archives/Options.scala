@@ -15,7 +15,8 @@ case class RunConfig( configPath : String = Options.CONF,
                       tenantIds : Seq[String] = Seq[String](),
                       regions : Seq[String] = Seq[String](),
                       config : Config = ConfigFactory.empty(),
-                      lastSuccessPath : String = Options.LAST_SUCCESS ) {
+                      lastSuccessPath : String = Options.LAST_SUCCESS,
+                      skipSuccessFileCheck: Boolean = false) {
 
   def getMossoFeeds() : Set[String] = {
 
@@ -42,6 +43,7 @@ object RunConfig {
        |dates: '${c.dates}'
        |tenantIds: '${c.tenantIds}'
        |regions: '${c.regions}'
+       |skipSuccessFileCheck: ${c.skipSuccessFileCheck}
      """.stripMargin
   }
 }
@@ -96,7 +98,7 @@ class Options {
       opt[String]( 's', "success" ) action { (x, c) =>
 
         c.copy( lastSuccessPath = x )
-      } text ( s"Location & name of the last success run file.  Default is location is ${LAST_SUCCESS}" )
+      } text ( s"Location & name of the last success run file.  Default location is ${LAST_SUCCESS}" )
 
       opt[Seq[String]]('r', "regions") action { (x, c) =>
 
@@ -107,7 +109,11 @@ class Options {
 
         c.copy(tenantIds = x)
       } text ("List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.")
-
+      
+      opt[Unit]("skipSuccessFileCheck") action { (x, c) =>
+        c.copy(skipSuccessFileCheck = true)
+      } text ("skipSuccessFileCheck flag is used to skip verification of existence of success files configured in success.paths property. ")
+      
       help("help") text ( "Show this." )
 
     }
