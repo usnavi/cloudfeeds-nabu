@@ -122,7 +122,7 @@ class Archiver( runConfig : RunConfig ) {
     
     if (nonExistentSuccessFiles.size > 0) {
       
-      val errorMessage: String = s"Missing success files :[${nonExistentSuccessFiles.mkString(",")}]"
+      val errorMessage: String = MISSING_SUCCESS_FILES(nonExistentSuccessFiles.mkString(","))
       logger.error(errorMessage)
       
       throw new RuntimeException(errorMessage)
