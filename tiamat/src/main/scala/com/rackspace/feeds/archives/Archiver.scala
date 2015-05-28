@@ -3,6 +3,7 @@ package com.rackspace.feeds.archives
 import java.sql.Timestamp
 import java.util.UUID
 
+import org.apache.hadoop.fs._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql._
@@ -12,7 +13,7 @@ import org.joda.time.{DateTimeZone, DateTime}
 
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters
+import scala.collection.{JavaConversions, JavaConverters}
 
 import Errors._
 
@@ -60,29 +61,28 @@ class Archiver( runConfig : RunConfig ) {
     conf.getString("tiamat.identity.apiKey"),
     conf.getString("tiamat.identity.password"))
 
-  val token = identity.getToken()
+  lazy val token = identity.getToken()
 
   //
   // Spark interfaces
   //
-  val sparkConf = new SparkConf().setAppName( this.getClass.getCanonicalName )
-  sparkConf.set( "spark.eventLog.enabled", "true" )
+  lazy val sparkConf = new SparkConf().setAppName( this.getClass.getCanonicalName )
+                              .set( "spark.eventLog.enabled", "true" )
 
-  val spark = new SparkContext(sparkConf)
-  val hive = new HiveContext(spark)
+  lazy val spark = new SparkContext(sparkConf)
+  lazy val hive = new HiveContext(spark)
 
   //
   // map of tenant preferences
   // map of impersonation tokens
   // list of errors associated with accessing identity & preferences
   //
-  val (prefMap, impMap, errorsImp) = makePrefs()
+  lazy val (prefMap, impMap, errorsImp) = makePrefs()
 
   //
   // Get Tenant Id for the given Nast Id
   //
   def getTenantIdForNastId = makeNastIdToTenantMap( prefMap, runConfig.getNastFeeds() )
-
 
   /**
    * Run & archive
@@ -91,6 +91,10 @@ class Archiver( runConfig : RunConfig ) {
    */
   def run() : Iterable[TiamatError] = {
 
+    if (!runConfig.skipSuccessFileCheck) {
+      validateSuccessFilePaths()
+    }
+    
     val grouped = indexEntries()
 
     val writer = new ArchiverHelper( prefMap, impMap, getTenantIdForNastId, feedUuidMap, liveUriMap )
@@ -102,7 +106,49 @@ class Archiver( runConfig : RunConfig ) {
     errorsImp ++ errorsWrite ++ errorsWriteEmpty
   }
 
+  /**
+   * Validate that success file paths exist. If they dont throws a generic
+   * an exception
+   * * 
+   */
+  def validateSuccessFilePaths(): Unit = {
 
+    val hadoopConf = spark.hadoopConfiguration
+    val fs = FileSystem.get(hadoopConf)
+
+    val successFilePathSet = getSuccessFilePaths
+    
+    val nonExistentSuccessFiles = successFilePathSet.filter(successFile => !fs.exists(new Path(successFile)))
+    
+    if (nonExistentSuccessFiles.size > 0) {
+      
+      val errorMessage: String = MISSING_SUCCESS_FILES(nonExistentSuccessFiles.mkString(","))
+      logger.error(errorMessage)
+      
+      throw new RuntimeException(errorMessage)
+    }
+  }
+
+  /**
+   * Based on the regions and the runDates, construct the success file paths
+   * that need to be verified
+   *  
+   * @return a sequence of success file paths.
+   */
+  def getSuccessFilePaths: Set[String] = {
+    import JavaConversions._
+
+    val successFilePathTemplatesSet = conf.getStringList("tiamat.success.file.paths").toSet
+
+    (for {
+      region <- runConfig.regions
+      date <- runConfig.dates
+    } yield successFilePathTemplatesSet.map( filePathTemplate => {
+        filePathTemplate.replace("#REGION#", region)
+                        .replace("#RUNDATE#", dayFormat.print(date))
+      })).flatten.toSet
+  }
+  
   /**
    * Make
    * <ul>

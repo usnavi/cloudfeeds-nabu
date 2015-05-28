@@ -28,4 +28,7 @@ object Errors {
 
   val NO_CLOUD_FILES = "TIAMAT007: Unable to read/write to Cloud Files"
 
+  def MISSING_SUCCESS_FILES(successFiles: String) : String = {
+    s"TIAMAT008: Missing success files: [$successFiles]"
+  }
 }
