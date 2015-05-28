@@ -34,6 +34,13 @@ object CreateFilesFeed {
 
   val feedUpdateTime = ISODateTimeFormat.dateTime().print( (new DateTime).withZone( DateTimeZone.UTC ))
 
+  def getNastIdAndContainerName(container : String): (String, String) = {
+    assert(container != null, "getNastIdAndContainerName(): container parameter must not be null")
+    val uriParts = container.split("/")
+    assert(uriParts.length >= 2, "getNastIdAndContainerName(): container must contain 2 or more uri parts")
+    (uriParts.dropRight(1).last, uriParts.last)
+  }
+
   def getFileName( key : ArchiveKey, date : String ): String = {
 
     val feed_name = key.feed.replace("/", "-")
@@ -193,16 +200,18 @@ object CreateFilesFeed {
     val next = getFileName( key, dayFormat.print( dateTime.minusDays( 1 ) ) )
     val prev = getFileName( key, dayFormat.print( dateTime.plusDays( 1 ) ) )
 
+    val (nastId, containerName) = getNastIdAndContainerName(container)
+
     s"""<?xml version="1.0" encoding="UTF-8" ?>
                   <feed xmlns="http://www.w3.org/2005/Atom"
                         xmlns:fh="http://purl.org/syndication/history/1.0">
         <fh:archive/>
         <link rel="current" href="${liveFeed}/${key.feed}/${getFeedId(key.tenantid, key.feed)}"/>
-        <link rel="self" href="${container}/${filename}"/>
+        <link rel="self" href="${liveFeed}/archive/${nastId}/${containerName}/${filename}"/>
         <id>${feedUuid}</id>
         <title type="text">${key.feed}</title>
-        <link rel="prev-archive" href="${container}/${prev}"/>
-        <link rel="next-archive" href="${container}/${next}"/>
+        <link rel="prev-archive" href="${liveFeed}/archive/${nastId}/${containerName}/${prev}"/>
+        <link rel="next-archive" href="${liveFeed}/archive/${nastId}/${containerName}/${next}"/>
         <updated>${feedUpdateTime}</updated>"""
   }
 
