@@ -542,8 +542,30 @@ class CreateFilesFeedTest extends FunSuite {
     assert( output.toString().replaceAll( "\\s+", " ") == proto.replaceAll( "\\s+", " " ) )
   }
 
-    val containerUrl = "https://hostname/v1/nastId/myContainer/"
-    test( "should get the right container name on url: " + containerUrl) {
-        assert(getNastIdAndContainerName(containerUrl) == ("nastId", "myContainer"))
-    }
+    val containerUrls = List( "https://hostname/v1/nastId/myContainer/",
+                              "https://hostname/v2/nastId/myContainer" )
+    containerUrls.foreach ( url =>
+        test( "should get the right container name on url: " + url) {
+            assert(getNastIdAndContainerName(url) == ("nastId", "myContainer"))
+        }
+    )
+
+    val invalidUrls = List ( "some_invalid_urls", "sftp:/incomplete" )
+    invalidUrls.foreach ( url =>
+        test ( "should get MalformedURL on url: " + url) {
+            intercept[java.net.MalformedURLException] {
+                getNastIdAndContainerName(url)
+            }
+        }
+    )
+
+    val invalidContainerUrls = List ( "http://hostname/not_enough_parts" )
+    invalidContainerUrls.foreach ( url =>
+        test ( "should get AssertionError on url: " + url) {
+            intercept[AssertionError] {
+                getNastIdAndContainerName(url)
+            }
+        }
+    )
+
 }

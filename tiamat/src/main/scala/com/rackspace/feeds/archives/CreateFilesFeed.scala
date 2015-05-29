@@ -36,8 +36,10 @@ object CreateFilesFeed {
 
   def getNastIdAndContainerName(container : String): (String, String) = {
     assert(container != null, "getNastIdAndContainerName(): container parameter must not be null")
-    val uriParts = container.split("/")
-    assert(uriParts.length >= 2, "getNastIdAndContainerName(): container must contain 2 or more uri parts")
+    val url = new java.net.URL(container)
+    assert(url.getPath != null, "getNastIdAndContainerName(): url must have path")
+    val uriParts = url.getPath.split("/")
+    assert(uriParts.length >= 3, "getNastIdAndContainerName(): container must contain 2 or more uri parts")
     (uriParts.dropRight(1).last, uriParts.last)
   }
 
