@@ -39,7 +39,9 @@ object CreateFilesFeed {
     val url = new java.net.URL(container)
     assert(url.getPath != null, "getNastIdAndContainerName(): url must have path")
     val uriParts = url.getPath.split("/")
-    assert(uriParts.length >= 3, "getNastIdAndContainerName(): container must contain 2 or more uri parts")
+    // url.getPath() returns a path like this '/foo/bar/none'. 
+    // the first / is counted so the uriParts[0] is '', uriParts[1] is 'foo', etc
+    assert(uriParts.length >= 3, "getNastIdAndContainerName(): container url's path must contain 3 or more uri parts")
     (uriParts.dropRight(1).last, uriParts.last)
   }
 
