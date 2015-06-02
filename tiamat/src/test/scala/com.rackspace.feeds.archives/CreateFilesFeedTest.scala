@@ -25,18 +25,18 @@ class CreateFilesFeedTest extends FunSuite {
             xmlns:fh="http://purl.org/syndication/history/1.0">
         <fh:archive/>
         <link rel="current" href="http://livefeed1/feed1/1234"/>
-        <link rel="self" href="container1/filename1"/>
+        <link rel="self" href="http://livefeed1/archive/1234_nast/container1/filename1"/>
         <id>uuid1</id>
         <title type="text">feed1</title>
-        <link rel="prev-archive" href="container1/region1_feed1_2014-02-19.xml"/>
-        <link rel="next-archive" href="container1/region1_feed1_2014-02-17.xml"/>
+        <link rel="prev-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-19.xml"/>
+        <link rel="next-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-17.xml"/>
         <updated>TIME</updated>"""
 
   test( "feedPreface() - feed preface should be correct for given tenant and feed" ) {
 
     val tenantPrefs = Map( "1234" -> TenantPrefs( "1234", "1234_nast", Map(), List( CreateFilesFeed.XML_KEY ) ) )
 
-    val preface = feedPreface( "container1",
+    val preface = feedPreface( "http://cloudfiles/v1/1234_nast/container1",
       "filename1",
       ArchiveKey( "1234", "region1", "feed1", "2014-02-18", XML_KEY  ),
       makeNastIdToTenantMap( tenantPrefs, Set() ),
@@ -54,16 +54,16 @@ class CreateFilesFeedTest extends FunSuite {
             xmlns:fh="http://purl.org/syndication/history/1.0">
         <fh:archive/>
         <link rel="current" href="http://livefeed1/feed1/1234_nast"/>
-        <link rel="self" href="container1/filename1"/>
+        <link rel="self" href="http://livefeed1/archive/1234_nast/container1/filename1"/>
         <id>uuid1</id>
         <title type="text">feed1</title>
-        <link rel="prev-archive" href="container1/region1_feed1_2014-02-19.xml"/>
-        <link rel="next-archive" href="container1/region1_feed1_2014-02-17.xml"/>
+        <link rel="prev-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-19.xml"/>
+        <link rel="next-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-17.xml"/>
         <updated>TIME</updated>"""
 
     val tenantPrefs = Map( "1234" -> TenantPrefs( "1234", "1234_nast", Map(), List( CreateFilesFeed.XML_KEY ) ) )
 
-    val preface = feedPreface( "container1",
+    val preface = feedPreface( "http://cloudfiles/v1/1234_nast/container1",
       "filename1",
       ArchiveKey( "1234", "region1", "feed1", "2014-02-18", XML_KEY  ),
       makeNastIdToTenantMap( tenantPrefs, Set( "feed1" ) ),
@@ -279,7 +279,7 @@ class CreateFilesFeedTest extends FunSuite {
 
   test( "generateJson() - with events" ) {
 
-    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "container1/filename1"}, {"rel" : "prev-archive","href" : "container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "container1/region1_feed1_2014-02-17.xml"}],"archive" :{ "@type" : "http://purl.org/syndication/history/1.0" }, "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME", "entry": [{
+    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "http://livefeed1/archive/1234_nast/container1/filename1"}, {"rel" : "prev-archive","href" : "http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-17.xml"}],"archive" :{ "@type" : "http://purl.org/syndication/history/1.0" }, "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME", "entry": [{
                      |        "category": [
                      |            {
                      |                "term": "tid:1234"
@@ -397,7 +397,7 @@ class CreateFilesFeedTest extends FunSuite {
 
   test( "generateJson() - empty feed" ) {
 
-    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "container1/filename1"}, {"rel" : "prev-archive","href" : "container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "container1/region1_feed1_2014-02-17.xml"}],"archive" :{ "@type" : "http://purl.org/syndication/history/1.0" }, "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME"}}""".stripMargin
+    val protoJson= """{"feed" : {"@type": "http://www.w3.org/2005/Atom", "link" : [{"rel" : "current","href" : "http://livefeed1/feed1/1234"}, {"rel" : "self","href" : "http://livefeed1/archive/1234_nast/container1/filename1"}, {"rel" : "prev-archive","href" : "http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-19.xml"}, {"rel" : "next-archive","href" : "http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-17.xml"}],"archive" :{ "@type" : "http://purl.org/syndication/history/1.0" }, "id" : "uuid1", "title" : {"type" : "text", "@text" : "feed1"}, "updated" : "TIME"}}""".stripMargin
 
     val output = new ByteArrayOutputStream()
 
@@ -418,11 +418,11 @@ class CreateFilesFeedTest extends FunSuite {
                   |            xmlns:fh="http://purl.org/syndication/history/1.0">
                   |        <fh:archive/>
                   |        <link rel="current" href="http://livefeed1/feed1/1234"/>
-                  |        <link rel="self" href="container1/filename1"/>
+                  |        <link rel="self" href="http://livefeed1/archive/1234_nast/container1/filename1"/>
                   |        <id>uuid1</id>
                   |        <title type="text">feed1</title>
-                  |        <link rel="prev-archive" href="container1/region1_feed1_2014-02-19.xml"/>
-                  |        <link rel="next-archive" href="container1/region1_feed1_2014-02-17.xml"/>
+                  |        <link rel="prev-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-19.xml"/>
+                  |        <link rel="next-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-17.xml"/>
                   |        <updated>TIME</updated><atom:entry xmlns:usage-summary="http://docs.rackspace.com/core/usage-summary"
                   |            xmlns:wadl="http://wadl.dev.java.net/2009/02"
                   |            xmlns:d312e1="http://wadl.dev.java.net/2009/02"
@@ -528,11 +528,11 @@ class CreateFilesFeedTest extends FunSuite {
                   |            xmlns:fh="http://purl.org/syndication/history/1.0">
                   |        <fh:archive/>
                   |        <link rel="current" href="http://livefeed1/feed1/1234"/>
-                  |        <link rel="self" href="container1/filename1"/>
+                  |        <link rel="self" href="http://livefeed1/archive/1234_nast/container1/filename1"/>
                   |        <id>uuid1</id>
                   |        <title type="text">feed1</title>
-                  |        <link rel="prev-archive" href="container1/region1_feed1_2014-02-19.xml"/>
-                  |        <link rel="next-archive" href="container1/region1_feed1_2014-02-17.xml"/>
+                  |        <link rel="prev-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-19.xml"/>
+                  |        <link rel="next-archive" href="http://livefeed1/archive/1234_nast/container1/region1_feed1_2014-02-17.xml"/>
                   |        <updated>TIME</updated></feed>""".stripMargin
 
     val output = new ByteArrayOutputStream()
@@ -541,4 +541,31 @@ class CreateFilesFeedTest extends FunSuite {
 
     assert( output.toString().replaceAll( "\\s+", " ") == proto.replaceAll( "\\s+", " " ) )
   }
+
+    val containerUrls = List( "https://hostname/v1/nastId/myContainer/",
+                              "https://hostname/v2/nastId/myContainer" )
+    containerUrls.foreach ( url =>
+        test( "should get the right container name on url: " + url) {
+            assert(getNastIdAndContainerName(url) == ("nastId", "myContainer"))
+        }
+    )
+
+    val invalidUrls = List ( "some_invalid_urls", "sftp:/incomplete" )
+    invalidUrls.foreach ( url =>
+        test ( "should get MalformedURL on url: " + url) {
+            intercept[java.net.MalformedURLException] {
+                getNastIdAndContainerName(url)
+            }
+        }
+    )
+
+    val invalidContainerUrls = List ( "http://hostname/not_enough_parts" )
+    invalidContainerUrls.foreach ( url =>
+        test ( "should get AssertionError on url: " + url) {
+            intercept[AssertionError] {
+                getNastIdAndContainerName(url)
+            }
+        }
+    )
+
 }
