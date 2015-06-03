@@ -324,7 +324,7 @@ class ArchiverTest extends FunSuite with MockitoSugar {
     
     for (region <- regions ; runDate <- runDates) {
       assert(successFilePathSet.contains(s"/user/cloudfeeds/cloudfeeds-nabu/usmu/run/$region/${CreateFilesFeed.dayFormat.print(runDate)}/success.txt"))
-      assert(successFilePathSet.contains(s"/user/cloudfeeds/prefs_dump/${CreateFilesFeed.dayFormat.print(runDate)}/_SUCCESS"))
+      assert(successFilePathSet.contains(s"/user/cloudfeeds/prefs_dump/_${CreateFilesFeed.dayFormat.print(runDate)}/_SUCCESS"))
     }
   }
 }
