@@ -354,15 +354,31 @@ object Archiver {
 
   def toEntry( row : Row ) : Entry = {
 
-    Entry( row.getString( 0 ),
-      row.getString( 1 ),
-      row.getString( 2 ),
-      row.getString( 3 ),
+    Entry(  getStringValue( row, 0 ),
+      getStringValue( row, 1 ),
+      getStringValue( row, 2 ),
+      getStringValue( row, 3 ),
       row( 4 ).asInstanceOf[Timestamp],
       row.getLong( 5 ),
-      row.getString( 6 ),
-      row.getString( 7 )
+      getStringValue( row, 6 ),
+      getStringValue( row, 7 )
     )
+  }
+
+  /**
+   * TODO:  This was added to prevent tiamat from breaking when any of the string values are null.  I added this when
+   * we were getting ready for our demo, and something a bit more intelligent needs to happen.
+   *
+   * @param row
+   * @param i
+   * @return
+   */
+  def getStringValue( row: Row, i : Int ) : String = {
+
+    if( row.isNullAt( i ) )
+      ""
+    else
+      row.getString( i )
   }
 
   /**
