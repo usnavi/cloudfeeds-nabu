@@ -16,7 +16,8 @@ case class RunConfig( configPath : String = Options.CONF,
                       regions : Seq[String] = Seq[String](),
                       config : Config = ConfigFactory.empty(),
                       lastSuccessPath : String = Options.LAST_SUCCESS,
-                      skipSuccessFileCheck: Boolean = false) {
+                      skipSuccessFileCheck: Boolean = false,
+                      isProcessAllTenants: Boolean = false) {
 
   def getMossoFeeds() : Set[String] = {
 
@@ -108,8 +109,12 @@ class Options {
       opt[Seq[String]]('t', "tenants") action { (x, c) =>
 
         c.copy(tenantIds = x)
-      } text ("List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.")
-      
+      } text ("List of tenant IDs (comma-separated). Mutually exclusive with option --all-tenants")
+
+      opt[Unit]('a', "all-tenants") action { (x, c) =>
+        c.copy(isProcessAllTenants = true)
+      } text ("all-tenants flag indicates whether to run for all tenants or not. Mutually exclusive with option --tenants")
+
       opt[Unit]("skipSuccessFileCheck") action { (x, c) =>
         c.copy(skipSuccessFileCheck = true)
       } text ("skipSuccessFileCheck flag is used to skip verification of existence of success files configured in success.paths property. ")
@@ -122,6 +127,16 @@ class Options {
 
       case Some(runConfig: RunConfig) => runConfig
       case _ => throw new Exception( "Invalid ")
+    }
+
+    //if both options are used
+    if (rc.isProcessAllTenants && rc.tenantIds.nonEmpty) {
+      throw new IllegalArgumentException( "Invalid command line options.--all-tenants (-a) and --tenants (-t) cannot be given at the same time")
+    }
+
+    //if neither options are used
+    if (!rc.isProcessAllTenants && rc.tenantIds.isEmpty) {
+      throw new IllegalArgumentException( "Invalid command line options. One of --all-tenants (-a) or --tenants (-t) must be given. ")
     }
 
     val rc1 = processDates(rc)

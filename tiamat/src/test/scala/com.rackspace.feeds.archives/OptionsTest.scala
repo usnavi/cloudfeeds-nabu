@@ -38,7 +38,7 @@ class OptionsTest extends FunSuite {
   test("No feeds option produces default feeds") {
 
     val options = new Options()
-    val config = options.parseOptions( Array("-c", getConf() ) )
+    val config = options.parseOptions( Array("-c", getConf(), "-a") )
     val feeds = getFeeds(config)
 
     assert( feeds &~ config.feeds.toSet isEmpty )
@@ -74,7 +74,7 @@ class OptionsTest extends FunSuite {
   test("Default regions") {
 
     val options = new Options()
-    val config = options.parseOptions( Array("-c", getConf() ) )
+    val config = options.parseOptions( Array("-c", getConf(), "--all-tenants" ) )
 
     assert( Set( "dfw","iad","hkg", "lon","ord", "syd" ) &~ config.regions.toSet isEmpty )
   }
@@ -83,8 +83,34 @@ class OptionsTest extends FunSuite {
 
     val options = new Options()
     intercept[ConfigException] {
-      val config = options.parseOptions( Array("-c", getConf( "src/test/resources/bad.conf" ) ) )
+      val config = options.parseOptions( Array("-c", getConf( "src/test/resources/bad.conf" ), "--all-tenants" ) )
     }
+  }
+
+  test("No tenants configured") {
+
+    val options = new Options()
+
+    intercept[IllegalArgumentException] {
+      val config = options.parseOptions( Array("-c", getConf() ))
+    }
+  }
+
+  test("Invalid tenants configured") {
+
+    val options = new Options()
+
+    intercept[IllegalArgumentException] {
+      val config = options.parseOptions( Array("-c", getConf(), "--all-tenants", "--tenants", "12345,67890" ))
+    }
+  }
+
+  test("Process all tenants") {
+
+    val options = new Options()
+    val config = options.parseOptions( Array("-c", getConf(), "--all-tenants" ) )
+
+    assert( config.isProcessAllTenants == true )
   }
 
   test( "Test happy path configuration" ) {
@@ -108,12 +134,13 @@ class OptionsTest extends FunSuite {
     assert( tids &~ config.tenantIds.toSet isEmpty )
     assert( regs &~ config.regions.toSet isEmpty )
     assert( dates &~ config.dates.toSet isEmpty )
-    assert(config.skipSuccessFileCheck == false)
+    assert( config.skipSuccessFileCheck == false)
+    assert( config.isProcessAllTenants == false)
   }
 
   test("skip success file check") {
     val options = new Options()
-    val config = options.parseOptions( Array("-c", getConf(), "--skipSuccessFileCheck") )
+    val config = options.parseOptions( Array("-c", getConf(), "--skipSuccessFileCheck", "--all-tenants") )
 
     assert(config.skipSuccessFileCheck == true)
   }
