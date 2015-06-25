@@ -38,7 +38,7 @@ class OptionsTest extends FunSuite {
   test("No feeds option produces default feeds") {
 
     val options = new Options()
-    val config = options.parseOptions( Array("-c", getConf(), "--all-tenants") )
+    val config = options.parseOptions( Array("-c", getConf(), "-a") )
     val feeds = getFeeds(config)
 
     assert( feeds &~ config.feeds.toSet isEmpty )

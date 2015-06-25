@@ -111,7 +111,7 @@ class Options {
         c.copy(tenantIds = x)
       } text ("List of tenant IDs (comma-separated). Mutually exclusive with option --all-tenants")
 
-      opt[Unit]("all-tenants") action { (x, c) =>
+      opt[Unit]('a', "all-tenants") action { (x, c) =>
         c.copy(isProcessAllTenants = true)
       } text ("all-tenants flag indicates whether to run for all tenants or not. Mutually exclusive with option --tenants")
 
@@ -131,12 +131,12 @@ class Options {
 
     //if both options are used
     if (rc.isProcessAllTenants && rc.tenantIds.nonEmpty) {
-      throw new IllegalArgumentException( "Invalid command line options. --all-tenants and -tenants cannot be given at the same time")
+      throw new IllegalArgumentException( "Invalid command line options.--all-tenants (-a) and --tenants (-t) cannot be given at the same time")
     }
 
     //if neither options are used
     if (!rc.isProcessAllTenants && rc.tenantIds.isEmpty) {
-      throw new IllegalArgumentException( "Invalid command line options. One of --all-tenants or -tenants must be given. ")
+      throw new IllegalArgumentException( "Invalid command line options. One of --all-tenants (-a) or --tenants (-t) must be given. ")
     }
 
     val rc1 = processDates(rc)
