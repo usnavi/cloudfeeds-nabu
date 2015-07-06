@@ -4,7 +4,7 @@
 -- This MUST match with how the Spark job is reading
 -- the table.
 
-CREATE TABLE entries(
+CREATE TABLE IF NOT EXISTS entries(
        id bigint,
        entryid string,
        creationdate timestamp,
