@@ -354,6 +354,13 @@ object Archiver {
 
   def toEntry( row : Row ) : Entry = {
 
+    /*
+     * No values should be null, but doing this in case anything slips through.  We've found that entrytype
+     * has been null in the past, so I'm handling the case for all string values.
+     *
+     * id & timestamp are never null as per our postgres schema.
+     */
+
     Entry(  getStringValue( row, 0 ),
       getStringValue( row, 1 ),
       getStringValue( row, 2 ),
@@ -366,8 +373,7 @@ object Archiver {
   }
 
   /**
-   * TODO:  This was added to prevent tiamat from breaking when any of the string values are null.  I added this when
-   * we were getting ready for our demo, and something a bit more intelligent needs to happen.
+   * This was added to prevent tiamat from breaking when any of the string values are null.
    *
    * @param row
    * @param i
