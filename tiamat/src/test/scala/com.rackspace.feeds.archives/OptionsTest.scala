@@ -71,6 +71,14 @@ class OptionsTest extends FunSuite {
     }
   }
 
+  test( "Default last_success.txt" ) {
+
+    val options = new Options()
+    val config = options.parseOptions( Array( "-c", getConf(), "--all-tenants" ) )
+
+    assert( config.lastSuccessPath == "last_success.txt" )
+  }
+
   test("Default regions") {
 
     val options = new Options()

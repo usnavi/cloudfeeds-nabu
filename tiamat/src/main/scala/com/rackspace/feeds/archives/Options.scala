@@ -52,7 +52,7 @@ object RunConfig {
 object Options {
 
   val CONF = "/etc/cloudfeeds-nabu/tiamat/tiamat.conf"
-  val LAST_SUCCESS = "/var/log/cloudfeeds-nabu/tiamat/last_success.txt"
+  val LAST_SUCCESS = "last_success.txt"
 }
 
 /**

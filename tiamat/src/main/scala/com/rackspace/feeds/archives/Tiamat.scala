@@ -21,7 +21,7 @@ import scala.collection.JavaConverters
  * -f <value> | --feeds <value>
  *       List feed names (comma-separated).  Default is to archive all archivable feeds.
  * -s <value> | --success <value>
- *       Location & name of the last success run file.  Default is location is /var/log/cloudfeeds-nabu/tiamat/last_success.txt
+ *       Location & name of the last success run file.  Default is location is ./last_success.txt
  * -r <value> | --regions <value>
  *       List of regions (common-separated).  Default is all regions.
  * -t <value> | --tenants <value>
