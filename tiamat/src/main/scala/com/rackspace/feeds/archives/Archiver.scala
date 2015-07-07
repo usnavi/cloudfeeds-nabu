@@ -354,15 +354,37 @@ object Archiver {
 
   def toEntry( row : Row ) : Entry = {
 
-    Entry( row.getString( 0 ),
-      row.getString( 1 ),
-      row.getString( 2 ),
-      row.getString( 3 ),
+    /*
+     * No values should be null, but doing this in case anything slips through.  We've found that entrytype
+     * has been null in the past, so I'm handling the case for all string values.
+     *
+     * id & timestamp are never null as per our postgres schema.
+     */
+
+    Entry(  getStringValue( row, 0 ),
+      getStringValue( row, 1 ),
+      getStringValue( row, 2 ),
+      getStringValue( row, 3 ),
       row( 4 ).asInstanceOf[Timestamp],
       row.getLong( 5 ),
-      row.getString( 6 ),
-      row.getString( 7 )
+      getStringValue( row, 6 ),
+      getStringValue( row, 7 )
     )
+  }
+
+  /**
+   * This was added to prevent tiamat from breaking when any of the string values are null.
+   *
+   * @param row
+   * @param i
+   * @return
+   */
+  def getStringValue( row: Row, i : Int ) : String = {
+
+    if( row.isNullAt( i ) )
+      ""
+    else
+      row.getString( i )
   }
 
   /**
