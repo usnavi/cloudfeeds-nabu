@@ -51,7 +51,6 @@ archivesBaseName = custom.parentProject + '-' + project.name
 def package_name = 'cloudfeeds-nabu'
 def app_name = 'tiamat'
 def version_clean = version.minus("-SNAPSHOT")
-def version_og = version
 def install_path = '/opt/' + package_name + '/' + app_name
 def config_path = '/etc/' + package_name + '/' + app_name
 def log_path = '/var/log/' + package_name + '/' + app_name
@@ -124,10 +123,11 @@ ospackage {
     }
 
     // check to see which jar got built for our symlink so the init script works
-    def version_jar = packageName + '-' + version_og + '-all.jar'
+    def version_jar = packageName + '-' + version_clean + '-all.jar'
     // println version_jar
 
     // create a symlink to named <app_name>.jar to the versioned jar
+    // This only works for release versions, not snapshot
     link( install_path + '/lib/' + packageName + '.jar', install_path + '/lib/' + version_jar)
 
     // looks like its not straightforward to create a directory with no files.  This works, though.
