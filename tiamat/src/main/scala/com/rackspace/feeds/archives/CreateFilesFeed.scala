@@ -244,6 +244,7 @@ object CreateFilesFeed {
     resp.getStatusLine.getStatusCode match {
 
       case 201 => ()
+      case 202 => ()
       case _ => throw new RestException(resp.getStatusLine.getStatusCode,
         CREATE_CONTAINER( uri, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
     }
