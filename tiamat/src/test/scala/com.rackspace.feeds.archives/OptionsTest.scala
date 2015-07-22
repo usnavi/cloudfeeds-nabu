@@ -152,9 +152,54 @@ class OptionsTest extends FunSuite {
 
     assert(config.skipSuccessFileCheck == true)
   }
-  
+
+  test( "run --test-run" ) {
+
+    val options = new Options()
+    val config = options.parseOptions( Array("-c", getConf(), "--test-run") )
+
+    assert( config.feeds.toSet &~ getTestFeeds( config ).toSet isEmpty )
+    assert( config.tenantIds.toSet &~ getTestTenants(config ).toSet isEmpty )
+  }
+
+  test( "run --test-run and --tenants" ) {
+
+    val options = new Options()
+    intercept[IllegalArgumentException] {
+      val config = options.parseOptions(Array("-c", getConf(), "--test-run", "--tenants", "tid1,tid2"))
+    }
+  }
+
+  test( "run --test-run and --all-tenants") {
+
+    val options = new Options()
+    intercept[IllegalArgumentException] {
+      val config = options.parseOptions(Array("-c", getConf(), "--test-run", "--all-tenants" ))
+    }
+  }
+
+  test( "run --test-run and --feeds" ) {
+
+    val options = new Options()
+    intercept[IllegalArgumentException] {
+      val config = options.parseOptions(Array("-c", getConf(), "--test-run", "--feeds", "feed1/events" ))
+    }
+
+  }
+
+
   def getFeeds( config : RunConfig ) : Set[String] = {
 
     config.getMossoFeeds() ++ config.getNastFeeds()
+  }
+
+  def getTestFeeds( config : RunConfig ) : List[String] = {
+
+    config.getTestFeeds()
+  }
+
+  def getTestTenants( config : RunConfig ) : List[String] = {
+
+    config.getTestTenants()
   }
 }

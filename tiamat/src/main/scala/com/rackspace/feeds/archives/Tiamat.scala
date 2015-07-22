@@ -26,6 +26,12 @@ import scala.collection.JavaConverters
  *       List of regions (common-separated).  Default is all regions.
  * -t <value> | --tenants <value>
  *       List of tenant IDs (comma-separated).  Default is all archiving-enabled tenants.
+ * -a | --all-tenants
+ *       all-tenants flag indicates whether to run for all tenants or not. Mutually exclusive with option --tenants
+ * --skipSuccessFileCheck
+ *       skipSuccessFileCheck flag is used to skip verification of existence of success files configured in success.paths property.
+ * -z | --test-run
+ *       test-run flag indicates whether to run in test-mode, which writes to specific test tenants and writes a custom set of feeds only for these test tenants.
  * --help
  *       Show this.
  *

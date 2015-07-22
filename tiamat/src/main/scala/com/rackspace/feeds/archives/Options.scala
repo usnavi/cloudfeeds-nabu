@@ -17,8 +17,23 @@ case class RunConfig( configPath : String = Options.CONF,
                       config : Config = ConfigFactory.empty(),
                       lastSuccessPath : String = Options.LAST_SUCCESS,
                       skipSuccessFileCheck: Boolean = false,
-                      isProcessAllTenants: Boolean = false) {
+                      isProcessAllTenants: Boolean = false,
+                      isTestMode: Boolean = false ) {
 
+  def getTestTenants() : List[String] = {
+
+    import JavaConversions._
+
+    config.getStringList("tiamat.tenants.Test").toList
+  }
+
+  def getTestFeeds() : List[String] = {
+
+    import JavaConversions._
+
+    config.getStringList("tiamat.feeds.Test").toList
+  }
+  
   def getMossoFeeds() : Set[String] = {
 
     import JavaConversions._
@@ -118,7 +133,11 @@ class Options {
       opt[Unit]("skipSuccessFileCheck") action { (x, c) =>
         c.copy(skipSuccessFileCheck = true)
       } text ("skipSuccessFileCheck flag is used to skip verification of existence of success files configured in success.paths property. ")
-      
+
+      opt[Unit]( 'z', "test-run" ) action { (x, c) =>
+        c.copy( isTestMode = true )
+      } text( "test-run flag indicates whether to run in test-mode, which writes to specific test tenants and writes a custom set of feeds only for these test tenants.")
+
       help("help") text ( "Show this." )
 
     }
@@ -130,13 +149,20 @@ class Options {
     }
 
     //if both options are used
-    if (rc.isProcessAllTenants && rc.tenantIds.nonEmpty) {
-      throw new IllegalArgumentException( "Invalid command line options.--all-tenants (-a) and --tenants (-t) cannot be given at the same time")
+    if ((rc.isProcessAllTenants && rc.tenantIds.nonEmpty)
+      || (rc.isProcessAllTenants && rc.isTestMode)
+      || (rc.tenantIds.nonEmpty && rc.isTestMode)  ) {
+      throw new IllegalArgumentException( "Invalid command line options. Only one of the following can be used:  --all-tenants (-a), --tenants (-t), --test-runs (-z) cannot be given at the same time")
     }
 
     //if neither options are used
-    if (!rc.isProcessAllTenants && rc.tenantIds.isEmpty) {
-      throw new IllegalArgumentException( "Invalid command line options. One of --all-tenants (-a) or --tenants (-t) must be given. ")
+    if (!rc.isProcessAllTenants && rc.tenantIds.isEmpty && !rc.isTestMode) {
+      throw new IllegalArgumentException( "Invalid command line options. One of --all-tenants (-a), --tenants (-t) or --test-run (-z) must be given. ")
+    }
+
+    // if both options are used
+    if ( rc.feeds.nonEmpty && rc.isTestMode ) {
+      throw new IllegalArgumentException( "Invalid command line options.  Only one of the following can be used: --feeds (-f) or --test-run (-z) ")
     }
 
     val rc1 = processDates(rc)
@@ -145,7 +171,21 @@ class Options {
 
     val rc2 = processRegions( conf, rc1 )
 
-    processFeeds( conf, rc2 )
+    val rc3 = processTenants( conf, rc2 )
+
+    processFeeds( conf, rc3 )
+  }
+
+  def processTenants( conf: Config, rc2: RunConfig ) : RunConfig = {
+
+    rc2 match {
+
+      case r: RunConfig if r.isTestMode => {
+
+        r.copy( tenantIds = r.getTestTenants() )
+      }
+      case r: RunConfig => r
+    }
   }
 
   def processDates(rc: RunConfig): RunConfig = {
@@ -184,10 +224,13 @@ class Options {
 
     val rc4 = rc3 match {
 
-      // add feeds if no feeds given
-      case r: RunConfig if r.feeds.isEmpty => {
+      case r: RunConfig if r.isProcessAllTenants => {
 
         r.copy(feeds = feedsConf.toList )
+      }
+      case r: RunConfig if r.isTestMode => {
+
+        r.copy( feeds = r.getTestFeeds() )
       }
       case r: RunConfig => r
     }
