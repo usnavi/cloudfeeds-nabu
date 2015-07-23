@@ -80,7 +80,7 @@ object Tiamat {
     }
     catch {
       case th : Throwable => {
-        logger.error(th.getMessage)
+        logger.error("Got throwable: ", th)
 
         throw th
       }
