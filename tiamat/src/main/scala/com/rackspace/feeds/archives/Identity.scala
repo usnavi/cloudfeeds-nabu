@@ -11,6 +11,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.auth.BasicScheme
 import org.apache.http.impl.client.{BasicCredentialsProvider, BasicAuthCache, HttpClientBuilder}
 import org.codehaus.jackson.map.ObjectMapper
+import org.slf4j.LoggerFactory
 
 import scala.io.Source
 
@@ -31,6 +32,7 @@ object Identity {
 class Identity( host : String, admin : String, apiKey : String, pw : String )  extends Serializable {
 
   val identity = s"https://${host}"
+  val logger = LoggerFactory.getLogger(getClass)
 
   import Identity._
 
@@ -43,6 +45,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
    */
   def impersonate(user: String, token: String): String = {
 
+    logger.debug(s"Impersonating user:[$user]")
     val client = HttpClientBuilder.create.build
     val post = new HttpPost(s"${identity}/v2.0/RAX-AUTH/impersonation-tokens")
     post.addHeader(ACCEPT, APP_JSON)
@@ -58,9 +61,16 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
     resp.getStatusLine.getStatusCode match {
 
-      case 200 => body.get("access").get("token").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        IMPERSONATE( user, Source.fromInputStream(resp.getEntity.getContent).mkString ))
+      case 200 => {
+        logger.debug(s"Successfully impersonated user:[$user]")
+        body.get("access").get("token").get("id").getTextValue
+      }
+      case _ => {
+        val impersonateErrorMsg: String = IMPERSONATE(user, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        logger.error(s"Error impersonatiing user:[$user], status code:[${resp.getStatusLine.getStatusCode}], message:[$impersonateErrorMsg]")
+        throw new RestException(resp.getStatusLine.getStatusCode,
+          impersonateErrorMsg)
+      }
     }
   }
 
@@ -72,6 +82,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
    */
   def getToken(): String = {
 
+    logger.debug("Retrieving admin token")
     val client = HttpClientBuilder.create.build
     val post = new HttpPost(s"${identity}/v2.0/tokens")
     post.addHeader(ACCEPT, APP_JSON)
@@ -86,9 +97,16 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
     resp.getStatusLine.getStatusCode match {
 
-      case 200 => body.get("access").get("token").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        ADMIN_TOKEN( output ))
+      case 200 => {
+        logger.debug("Successfully retrieved admin token")
+        body.get("access").get("token").get("id").getTextValue
+      }
+      case _ => {
+        val adminTokenErrorMsg: String = ADMIN_TOKEN(output)
+        logger.error(s"Error getting token for admin: status code:[${resp.getStatusLine.getStatusCode}], message:[$adminTokenErrorMsg]")
+        throw new RestException(resp.getStatusLine.getStatusCode,
+          adminTokenErrorMsg)
+      }
     }
   }
 
@@ -103,6 +121,7 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
    */
   def getTenantAdmin(tenant: String): String = {
 
+    logger.debug(s"Retrieving admin for tenant:[$tenant] ")
     val targetHost = new HttpHost(host, 443, "https")
     val authCache = new BasicAuthCache
     authCache.put(targetHost, new BasicScheme)
@@ -131,9 +150,16 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
 
     resp.getStatusLine.getStatusCode match {
 
-      case 200 => body.get("user").get("id").getTextValue
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        ADMIN_USER( tenant, output ) )
+      case 200 => {
+        logger.debug(s"Successfully retrieved admin for tenant:[$tenant] ")
+        body.get("user").get("id").getTextValue
+      }
+      case _ => {
+        val adminUserErrorMsg: String = ADMIN_USER(tenant, output)
+        logger.error(s"Error getting admin for tenant:[$tenant]: status code:[${resp.getStatusLine.getStatusCode}], message:[$adminUserErrorMsg]")
+        throw new RestException(resp.getStatusLine.getStatusCode,
+          adminUserErrorMsg )
+      }
     }
   }
 }
