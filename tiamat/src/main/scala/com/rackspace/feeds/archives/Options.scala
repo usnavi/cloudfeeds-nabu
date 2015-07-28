@@ -228,10 +228,11 @@ class Options {
 
         r.copy( feeds = r.getTestFeeds() )
       }
-      case r: RunConfig =>  {
+      case r: RunConfig if r.feeds.isEmpty => {
 
-        r.copy(feeds = feedsConf.toList )
+        r.copy( feeds = feedsConf.toList )
       }
+      case r: RunConfig => r
     }
 
     rc4
