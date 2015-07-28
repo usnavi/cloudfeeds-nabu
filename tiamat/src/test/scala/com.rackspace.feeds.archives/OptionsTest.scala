@@ -146,6 +146,21 @@ class OptionsTest extends FunSuite {
     assert( config.isProcessAllTenants == false)
   }
 
+  test( "Test happy path configuration - for specific tenants" ) {
+
+    val tids = Set( "tid1", "tid2" )
+
+    val options = new Options()
+    val config = options.parseOptions( Array("-c", getConf(),
+      "-t", tids.mkString( "," )))
+
+    assert( config.feeds.toSet.nonEmpty, "feeds empty")
+    assert( tids &~ config.tenantIds.toSet isEmpty, "tenantIds mismatch" )
+    assert( config.regions.toSet.nonEmpty, "regions empty" )
+    assert( config.skipSuccessFileCheck == false)
+    assert( config.isProcessAllTenants == false)
+  }
+
   test("skip success file check") {
     val options = new Options()
     val config = options.parseOptions( Array("-c", getConf(), "--skipSuccessFileCheck", "--all-tenants") )
