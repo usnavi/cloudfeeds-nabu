@@ -309,7 +309,11 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
     catch {
 
       case e : RestException => Some( TiamatError( key, e ) )
-      case th : Throwable => Some( TiamatError( key, th, NO_CLOUD_FILES ) )
+      case th : Throwable => {
+        val writeFileError: TiamatError = TiamatError(key, th, NO_CLOUD_FILES)
+        logger.error(s"Writing to file failed: message:[${writeFileError.toString}]", th)
+        Some( writeFileError )
+      }
     }
   }
 }

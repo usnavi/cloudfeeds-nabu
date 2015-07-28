@@ -10,6 +10,7 @@ import org.apache.http.entity.AbstractHttpEntity
 import org.apache.http.impl.client.HttpClientBuilder
 import org.joda.time.{DateTimeZone, DateTime}
 import org.joda.time.format.{ISODateTimeFormat, DateTimeFormat}
+import org.slf4j.LoggerFactory
 
 import scala.io.Source
 
@@ -26,6 +27,8 @@ import Errors._
 object CreateFilesFeed {
 
   import com.rackspace.feeds.archives.Identity._
+
+  val logger = LoggerFactory.getLogger(getClass)
 
   val JSON_KEY = "JSON"
   val XML_KEY = "XML"
@@ -117,8 +120,12 @@ object CreateFilesFeed {
 
       case 201 => ()
       case 202 => ()
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        WRITE( path, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
+      case _ => {
+        val writeErrorMsg: String = WRITE(path, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        logger.error(s"Create feed failed for container:[$container] with message:[$writeErrorMsg]")
+        throw new RestException(resp.getStatusLine.getStatusCode,
+          writeErrorMsg )
+      }
     }
   }
 
@@ -245,8 +252,12 @@ object CreateFilesFeed {
 
       case 201 => ()
       case 202 => ()
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        CREATE_CONTAINER( uri, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
+      case _ => {
+        val createContainerErrorMsg: String = CREATE_CONTAINER(uri, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        logger.error(s"create container failed for uri:[$uri], message:[$createContainerErrorMsg]")
+        throw new RestException(resp.getStatusLine.getStatusCode,
+          createContainerErrorMsg )
+      }
     }
   }
 
@@ -261,8 +272,12 @@ object CreateFilesFeed {
 
       case 204 => true
       case 404 => false
-      case _ => throw new RestException(resp.getStatusLine.getStatusCode,
-        CONTAINER_EXISTS( container, Source.fromInputStream(resp.getEntity.getContent).mkString ) )
+      case _ => {
+        val containerExistsErrorMessage: String = CONTAINER_EXISTS(container, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        logger.error(s"Container exists check failed: status code:[${resp.getStatusLine.getStatusCode}] message:[$containerExistsErrorMessage]")
+        throw new RestException(resp.getStatusLine.getStatusCode,
+          containerExistsErrorMessage )
+      }
     }
   }
 }
