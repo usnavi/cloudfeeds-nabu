@@ -224,13 +224,13 @@ class Options {
 
     val rc4 = rc3 match {
 
-      case r: RunConfig if r.isProcessAllTenants => {
-
-        r.copy(feeds = feedsConf.toList )
-      }
       case r: RunConfig if r.isTestMode => {
 
         r.copy( feeds = r.getTestFeeds() )
+      }
+      case r: RunConfig if r.feeds.isEmpty => {
+
+        r.copy( feeds = feedsConf.toList )
       }
       case r: RunConfig => r
     }

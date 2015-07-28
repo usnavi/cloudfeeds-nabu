@@ -125,6 +125,7 @@ class OptionsTest extends FunSuite {
 
     val tids = Set( "tid1", "tid2" )
     val regs = Set( "dfw", "iad" )
+    val feedsSetOnCommandLine = Set("feed1/events", "feed2/events")
 
     val dateParse =  DateTimeFormat.forPattern("yyyy-MM-dd")
     val dates = Set( dateParse.parseDateTime( "2015-01-01" ), dateParse.parseDateTime(( "2014-01-01") ) )
@@ -132,16 +133,33 @@ class OptionsTest extends FunSuite {
 
     val options = new Options()
     val config = options.parseOptions( Array("-c", getConf(),
-    "-f", "feed1/events,feed2/events",
+    "-f", feedsSetOnCommandLine.mkString( "," ),
     "-d", "2015-01-01,2014-01-01",
     "-t", tids.mkString( "," ),
     "-r", regs.mkString( "," ) ) )
-    val feeds = getFeeds(config)
+    val configuredFeeds = getFeeds(config)
 
-    assert( feeds &~ config.feeds.toSet isEmpty )
-    assert( tids &~ config.tenantIds.toSet isEmpty )
-    assert( regs &~ config.regions.toSet isEmpty )
-    assert( dates &~ config.dates.toSet isEmpty )
+    assert( config.feeds.toSet &~ feedsSetOnCommandLine isEmpty , "feeds set to run do no match the values set with -f")
+    assert( config.feeds.toSet &~ configuredFeeds isEmpty , "feeds set with -f not part of the feeds configured")
+    assert( config.tenantIds.toSet &~ tids isEmpty, "tids set to run do not match the values set with -t" )
+    assert( config.regions.toSet &~ regs isEmpty, "regions set to run do not match the values set with -r")
+    assert( config.dates.toSet &~ dates isEmpty, "dates set to run do not match the values set with -d" )
+    assert( !config.skipSuccessFileCheck, "skipSuccessFileCheck flag should be false by defualt")
+    assert( !config.isProcessAllTenants, "isProcessAllTenants flag should be false when used with -t")
+  }
+
+  test( "Test happy path configuration - for specific tenants" ) {
+
+    val tids = Set( "tid1", "tid2" )
+
+    val options = new Options()
+    val config = options.parseOptions( Array("-c", getConf(),
+      "-t", tids.mkString( "," )))
+    val configuredFeeds = getFeeds(config)
+
+    assert( configuredFeeds &~ config.feeds.toSet  isEmpty , "feeds set to run do not match with feeds configured")
+    assert( config.tenantIds.toSet &~ tids  isEmpty, "tids set to run do not match the values set with -t" )
+    assert( config.regions.toSet.nonEmpty, "regions empty" )
     assert( config.skipSuccessFileCheck == false)
     assert( config.isProcessAllTenants == false)
   }
