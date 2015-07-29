@@ -4,7 +4,7 @@ usage()
 {
     echo "Usage: $0 <region>"
     echo "where"
-    echo "  <region> is one of ORD, DFW, IAD, LON, SYD, HKG"
+    echo "  <region> is one of ord, dfw, iad, lon, syd, hkg"
     exit 1
 }
 
