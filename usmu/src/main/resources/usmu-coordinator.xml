@@ -22,10 +22,14 @@
 <coordinator-app name="${coordAppName}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" 
                  timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
    <controls>
-       <!-- Materialized jobs should wait 22 hours (=1320 minutes) before timing out. 
+       <!-- Materialized jobs should wait 29 hours (=1740 minutes) before timing out. 
             They materialize in the hour specified in the ${startTime}, every day.
+            We start Usmu at 00:00 every day. The job that processes Aug 4 data
+            will be created 00:00 on Aug 4. Ballista dumps the data for Aug 4
+            on Aug 5, expected to be done by 5 am. So Usmu has to wait at least
+            24 + 5 = 29 hours before timing out.
        -->
-       <timeout>1320</timeout>
+       <timeout>1740</timeout>
    </controls>
    <datasets>
       <!-- Every 15 minutes, the coordinator will check if a materialize job can run
