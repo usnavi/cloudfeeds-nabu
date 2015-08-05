@@ -22,10 +22,10 @@
 <coordinator-app name="${coordAppName}" frequency="${coord:days(1)}" start="${startTime}" end="${endTime}" 
                  timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
    <controls>
-       <!-- Materialized jobs should wait 22 hours (=1320 minutes) before timing out. 
+       <!-- Materialized jobs should wait 24 hours (=1440 minutes) before timing out. 
             They materialize in the hour specified in the ${startTime}, every day.
        -->
-       <timeout>1320</timeout>
+       <timeout>1440</timeout>
    </controls>
    <datasets>
       <!-- Every 15 minutes, the coordinator will check if a materialize job can run
