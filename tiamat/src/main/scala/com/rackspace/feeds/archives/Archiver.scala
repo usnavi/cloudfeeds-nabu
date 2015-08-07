@@ -299,20 +299,30 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
 
     val tid = key.tenantid
 
-    val container = prefMap( tid ).containers(key.region)
+    prefMap( tid ).containers.get(key.region) match {
 
-    try {
-      containerCheck(container, impMap(tid))
-      createFeed(container, key, content, impMap(tid), getFeedId, feedUuid, liveFeed)
-      None
-    }
-    catch {
+      case Some(container) => {
 
-      case e : RestException => Some( TiamatError( key, e ) )
-      case th : Throwable => {
-        val writeFileError: TiamatError = TiamatError(key, th, NO_CLOUD_FILES)
-        logger.error(s"Writing to file failed: message:[${writeFileError.toString}]", th)
-        Some( writeFileError )
+        try {
+
+          containerCheck(container, impMap(tid))
+          createFeed(container, key, content, impMap(tid), getFeedId, feedUuid, liveFeed)
+          None
+
+        } catch {
+
+          case e : RestException => Some( TiamatError( key, e ) )
+          case th : Throwable => {
+            val writeFileError: TiamatError = TiamatError(key, th, NO_CLOUD_FILES)
+            logger.error(s"Writing to file failed: message:[${writeFileError.toString}]", th)
+            Some( writeFileError )
+          }
+        }
+
+      }
+      case None => {
+        logger.info(s"Skipping tid: [$tid] for region: [${key.region}] as container Url is not present for that region in the preferences.")
+        return None
       }
     }
   }
