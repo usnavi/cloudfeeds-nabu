@@ -121,7 +121,8 @@ object CreateFilesFeed {
       case 201 => ()
       case 202 => ()
       case _ => {
-        val writeErrorMsg: String = WRITE(path, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        val responseContent = if (resp.getEntity != null && resp.getEntity.getContentLength > 0) Source.fromInputStream(resp.getEntity.getContent).mkString else ""
+        val writeErrorMsg: String = WRITE(path, responseContent)
         logger.error(s"Create feed failed for container:[$container] with message:[$writeErrorMsg]")
         throw new RestException(resp.getStatusLine.getStatusCode,
           writeErrorMsg )
@@ -253,7 +254,8 @@ object CreateFilesFeed {
       case 201 => ()
       case 202 => ()
       case _ => {
-        val createContainerErrorMsg: String = CREATE_CONTAINER(uri, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        val responseContent = if (resp.getEntity != null && resp.getEntity.getContentLength > 0) Source.fromInputStream(resp.getEntity.getContent).mkString else ""
+        val createContainerErrorMsg: String = CREATE_CONTAINER(uri, responseContent)
         logger.error(s"create container failed for uri:[$uri], message:[$createContainerErrorMsg]")
         throw new RestException(resp.getStatusLine.getStatusCode,
           createContainerErrorMsg )
@@ -273,7 +275,8 @@ object CreateFilesFeed {
       case 204 => true
       case 404 => false
       case _ => {
-        val containerExistsErrorMessage: String = CONTAINER_EXISTS(container, Source.fromInputStream(resp.getEntity.getContent).mkString)
+        val responseContent = if (resp.getEntity != null && resp.getEntity.getContentLength > 0) Source.fromInputStream(resp.getEntity.getContent).mkString else ""
+        val containerExistsErrorMessage: String = CONTAINER_EXISTS(container, responseContent)
         logger.error(s"Container exists check failed: status code:[${resp.getStatusLine.getStatusCode}] message:[$containerExistsErrorMessage]")
         throw new RestException(resp.getStatusLine.getStatusCode,
           containerExistsErrorMessage )
