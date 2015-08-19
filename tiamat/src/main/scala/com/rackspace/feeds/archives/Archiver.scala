@@ -238,9 +238,7 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
 
     val errorsWriteEmpty = spark.parallelize(expectedFiles.diff(writtenSet).toSeq).map {
       {
-        // calling .get blindly on an option is risky, but the region's are already filted by the keys in the map
-        // so there will be a value
-        key => writeFile(key, Array[AtomEntry](), prefMap, impMap, getTenantIdForNastId, feedUuidMap(key.feed), liveUriMap.get(key.region).get)
+        key => writeFile(key, Array[AtomEntry](), prefMap, impMap, getTenantIdForNastId, feedUuidMap(key.feed), liveUriMap)
       }
     }
       .flatMap {
@@ -256,9 +254,7 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
 
     val output = grouped.map { case (key, value) =>
 
-      // calling .get blindly on an option is risky, but the region's are already filtered by the keys in the map
-      // so there will be a value
-      (key, writeFile(key, value, prefMap, impMap, getTenantIdForNastId, feedUuidMap(key.feed), liveUriMap.get(key.region).get))
+      (key, writeFile(key, value, prefMap, impMap, getTenantIdForNastId, feedUuidMap(key.feed), liveUriMap ))
     }
 
     val errorsWrite = output.flatMap(
@@ -284,7 +280,7 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
    * @param impMap
    * @param getFeedId
    * @param feedUuid
-   * @param liveFeed
+   * @param liveUriMap
    * @return
    */
   def writeFile( key : ArchiveKey,
@@ -293,7 +289,7 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
                  impMap: Map[String, String],
                  getFeedId : (String, String) => String,
                  feedUuid : String,
-                 liveFeed : String ) : Option[TiamatError] = {
+                 liveUriMap : Map[String, String ] ) : Option[TiamatError] = {
 
     import com.rackspace.feeds.archives.CreateFilesFeed._
 
@@ -305,10 +301,19 @@ class ArchiverHelper( prefMap : Map[String, TenantPrefs],
 
         try {
 
-          containerCheck(container, impMap(tid))
-          createFeed(container, key, content, impMap(tid), getFeedId, feedUuid, liveFeed)
-          None
+          // if live URL map doesn't contain the region, we don't have that region in the environment
+          liveUriMap.get(key.region) match {
 
+            case Some(liveFeed) =>
+              containerCheck (container, impMap (tid) )
+              createFeed (container, key, content, impMap (tid), getFeedId, feedUuid, liveFeed)
+              None
+            case None =>
+              // this case only occurs in test & staging, our preferences service doesn't prevent users
+              // from configuring for dc's which don't exist in the environment.  E.g., no DFW in staging.
+              logger.warn( s"Tiamat isn't configured for the requested region: '${key.region}': ${key}" )
+              None
+          }
         } catch {
 
           case e : RestException => Some( TiamatError( key, e ) )
