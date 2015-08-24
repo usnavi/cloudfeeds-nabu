@@ -104,6 +104,43 @@ class ArchiverTest extends FunSuite with MockitoSugar {
                     |   </atom:content>
                     |</atom:entry>""".stripMargin
 
+  val PRIVATE_XML = """<atom:entry xmlns:atom="http://www.w3.org/2005/Atom"
+                    |            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                    |            xmlns="http://www.w3.org/2001/XMLSchema">
+                    |   <atom:id>urn:uuid:e53d007a-fc23-11e1-975c-cfa6b29bb814</atom:id>
+                    |   <atom:category term="tid:1234"/>
+                    |   <atom:category term="rgn:DFW"/>
+                    |   <atom:category term="dc:DFW1"/>
+                    |   <atom:category term="rid:4a2b42f4-6c63-11e1-815b-7fcbcf67f549"/>
+                    |   <atom:category term="widget.widget.widget.usage"/>
+                    |   <atom:category term="type:widget.widget.widget.usage"/>
+                    |   <atom:category term="cloudfeeds:private"/>
+                    |   <atom:title>Widget</atom:title>
+                    |   <atom:content type="application/xml">
+                    |      <event xmlns="http://docs.rackspace.com/core/event"
+                    |             xmlns:sample="http://docs.rackspace.com/usage/widget"
+                    |             id="e53d007a-fc23-11e1-975c-cfa6b29bb814"
+                    |             version="1"
+                    |             resourceId="4a2b42f4-6c63-11e1-815b-7fcbcf67f549"
+                    |             tenantId="1234"
+                    |             startTime="2013-03-15T11:51:11Z"
+                    |             endTime="2013-03-16T11:51:11Z"
+                    |             type="USAGE"
+                    |             dataCenter="DFW1"
+                    |             region="DFW">
+                    |         <sample:product serviceCode="Widget"
+                    |                         version="1"
+                    |                         resourceType="WIDGET"
+                    |                         label="sampleString"
+                    |                         mid="6e8bc430-9c3a-11d9-9669-0800200c9a66"
+                    |                         num_checks="1"
+                    |                         time="15:32:00Z"
+                    |                         dateTime="2013-09-26T15:32:00Z"
+                    |                         enumList="BEST BEST"/>
+                    |      </event>
+                    |   </atom:content>
+                    |</atom:entry>""".stripMargin
+
   val CHECK_JSON = """{"category":
                      |  [{"term":"tid:1234"},
                      |    {"term":"rgn:DFW"},
@@ -272,6 +309,35 @@ class ArchiverTest extends FunSuite with MockitoSugar {
     assert( archiveKey == protoKey  )
     assert( atomEntry.id == protoEntry.id )
     assert( atomEntry.entrybody.replaceAll("\\s+", " ") == protoEntry.entrybody.replaceAll( "\\s+", " " ) )
+  }
+
+  test( "entries with cloudfeeds:private category should be filtered out of user's archives" ) {
+
+    val protoKey = ArchiveKey( "1234", "dfw", "feed1", "2014-02-18", CreateFilesFeed.XML_KEY )
+    val nastId = "1234_nast"
+
+    val tenantPrefs = List( TenantPrefs( "1234", "1234_nast", Map(), List( CreateFilesFeed.XML_KEY ) ) )
+
+    val entries = List( Entry( nastId,
+      protoKey.region,
+      protoKey.feed,
+      INPUT_XML,
+      new Timestamp( 1392779530 ), 1,
+      "tid:12334|rgn:DFW|dc:DFW1|rid:4a2b42f4-6c63-11e1-815b-7fcbcf67f549|widget.widget.widget.update|type:widget.widget.widget.update|label:test|metaData.key:foo",
+      protoKey.date ),
+      Entry( nastId,
+        protoKey.region,
+        protoKey.feed,
+        PRIVATE_XML,
+        new Timestamp( 1392779531 ), 1,
+        "tid:12334|rgn:DFW|dc:DFW1|rid:4a2b42f4-6c63-11e1-815b-7fcbcf67f549|widget.widget.widget.update|type:widget.widget.widget.update|label:test|metaData.key:foo|cloudfeeds:private",
+        protoKey.date ) )
+
+    val filtered = entries.filter( viewableForArchivers( tenantPrefs, Set( protoKey.feed), Set( protoKey.region ) ) )
+
+
+    assert( filtered.size == 1 )
+    assert( !filtered.head.entrybody.contains( "cloudfeeds:private") )
   }
 
   test( "processJson() into JSON" ) {
