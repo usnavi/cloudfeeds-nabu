@@ -33,13 +33,13 @@ if [ ! -f ${COORDINATOR_PROPS} ]; then
 fi
 source ${COORDINATOR_PROPS}
 
-# There doesn't seem to be a nicer way to find existing Oozie jobs so
-# we can kill and submit a new set. This one I found on the web and
-# probably needs to be evaluated every time we upgrade Oozie.
-
 # Clean up previous run. 
-# WARNING: this WILL delete *all* RUNNING jobs.
-curl ${OOZIE_URL}'/v1/jobs?len=1000&filter=status%3DRUNNING&jobtype=coord'  | python -mjson.tool | grep "coordJobId" | sed "s/\(.*\)coordJobId\(.*\): \"\(.*\)\"\(.*\)/\3/" | while read job_id; do oozie job -oozie ${OOZIE_URL} -kill $job_id; done
+
+`dirname $0`/usmu-coord-stop.sh
+if [ $? -ne 0 ]; then
+    echo "WARN: unable to stop/kill previous coordinator jobs."
+    echo "Please do so manually."
+fi
 
 # run the usmu-coordinator.xml for each region to watch for Cloud Feeds dump
 for aRegion in ${REGION_LIST}
