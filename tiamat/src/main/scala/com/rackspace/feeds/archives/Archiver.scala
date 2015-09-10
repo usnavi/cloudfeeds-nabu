@@ -91,19 +91,25 @@ class Archiver( runConfig : RunConfig ) {
    */
   def run() : Iterable[TiamatError] = {
 
-    if (!runConfig.skipSuccessFileCheck) {
-      validateSuccessFilePaths()
+    try {
+
+      if (!runConfig.skipSuccessFileCheck) {
+        validateSuccessFilePaths()
+      }
+
+      val grouped = indexEntries()
+
+      val writer = new ArchiverHelper(prefMap, impMap, getTenantIdForNastId, feedUuidMap, liveUriMap)
+
+      val (writtenSet, errorsWrite) = writer.writeFeedsWithEntries(grouped)
+
+      val errorsWriteEmpty = writer.writeFeedsWithoutEntries(writtenSet, runConfig, spark)
+
+      errorsImp ++ errorsWrite ++ errorsWriteEmpty
+
+    } finally {
+      spark.stop()
     }
-    
-    val grouped = indexEntries()
-
-    val writer = new ArchiverHelper( prefMap, impMap, getTenantIdForNastId, feedUuidMap, liveUriMap )
-
-    val (writtenSet, errorsWrite) = writer.writeFeedsWithEntries( grouped )
-
-    val errorsWriteEmpty = writer.writeFeedsWithoutEntries( writtenSet, runConfig, spark )
-
-    errorsImp ++ errorsWrite ++ errorsWriteEmpty
   }
 
   /**
@@ -189,7 +195,7 @@ class Archiver( runConfig : RunConfig ) {
     grouped
   }
 
-  def getEntries(runConfig: RunConfig, hive: HiveContext): SchemaRDD = {
+  def getEntries(runConfig: RunConfig, hive: HiveContext): DataFrame = {
     val dateWhere = runConfig.dates.map(d => s"date = '${dayFormat.print(d)}'").mkString(" OR ")
     hive.sql( s"""select tenantid, region, feed, entrybody, datelastupdated, id, categories, date from entries where ${dateWhere}""")
   }

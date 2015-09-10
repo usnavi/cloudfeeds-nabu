@@ -16,14 +16,14 @@ class PreferencesTest extends FunSuite with MockitoSugar {
 
   import Preferences._
 
-  def createRow( tid : String, payload : String, aid : String, enabled : Boolean ) : Row = {
+  def createRow( tid : String, payload : String, aid : String, enabled : Boolean ) : PreferenceRow = {
 
-    val mockRow = mock[Row]
+    val mockRow = mock[PreferenceRow]
 
-    when( mockRow.getString(0)).thenReturn( tid )
-    when( mockRow.getString(1)).thenReturn( payload )
-    when( mockRow.getString(2)).thenReturn( aid )
-    when( mockRow.getBoolean(5)).thenReturn( enabled )
+    when( mockRow.tenantId ).thenReturn( tid )
+    when( mockRow.payload ).thenReturn( payload )
+    when( mockRow.alternate_id ).thenReturn( aid )
+    when( mockRow.enabled ).thenReturn( enabled )
 
     mockRow
   }
