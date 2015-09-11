@@ -147,6 +147,7 @@ artifacts {
         type   'rpm'
         builtBy buildRpm
     }
+    archives jar
 }
 
 uploadArchives {
