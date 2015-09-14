@@ -8,6 +8,9 @@
       <schema key="http://docs.rackspace.com/event/atom-hopper/feedcount" version="1">
          <attributes>product/@count</attributes>
       </schema>
+      <schema key="http://docs.rackspace.com/event/autoscale" version="1">
+         <attributes>product/@desiredCapacity,product/@currentCapacity</attributes>
+      </schema>
       <schema key="http://docs.rackspace.com/usage/bigdata" version="1">
          <attributes>product/@numberServersInCluster,product/@aggregatedClusterDuration,product/@bandwidthIn,product/@bandwidthOut</attributes>
       </schema>
@@ -58,6 +61,9 @@
       </schema>
       <schema key="http://docs.rackspace.com/usage/dbaas" version="2">
          <attributes>product/@memory,product/@storage</attributes>
+      </schema>
+      <schema key="http://docs.rackspace.com/usage/dbaas" version="3">
+         <attributes>product/@memory,product/@storage,product/@isHAInstance</attributes>
       </schema>
       <schema key="http://docs.rackspace.com/event/dcx/ip-address-association"
               version="1">
@@ -122,6 +128,22 @@
       <schema key="http://docs.rackspace.com/event/nova" version="1">
          <attributes>product/@isManaged,product/@bandwidthIn,product/@bandwidthOut</attributes>
       </schema>
+      <schema key="http://docs.rackspace.com/usage/rackspacecdn/bandwidth"
+              version="1">
+         <attributes>product/@bandwidthOut,product/@sslEnabled</attributes>
+      </schema>
+      <schema key="http://docs.rackspace.com/usage/rackspacecdn/bandwidth"
+              version="2">
+         <attributes>product/@bandwidthOut</attributes>
+      </schema>
+      <schema key="http://docs.rackspace.com/usage/rackspacecdn/requestcount"
+              version="1">
+         <attributes>product/@requestCount,product/@sslEnabled</attributes>
+      </schema>
+      <schema key="http://docs.rackspace.com/usage/rackspacecdn/requestcount"
+              version="2">
+         <attributes>product/@requestCount</attributes>
+      </schema>
       <schema key="http://docs.rackspace.com/event/RHEL" version="1">
          <attributes>product/@used</attributes>
       </schema>
@@ -171,7 +193,7 @@
          <attributes>role/@roleId,role/@suppressNotifications</attributes>
       </schema>
       <schema key="http://docs.rackspace.com/event/support/account/teams" version="1">
-         <attributes>team/@teamNumber,team/@suppressNotifications</attributes>
+         <attributes>team/@teamNumber,team/@suppressNotifications,team/@previousTeamNumber</attributes>
       </schema>
       <schema key="http://docs.rackspace.com/usage/widget/explicit" version="1">
          <attributes>product/@same_int,product/@num_checks,product/@disabled</attributes>
