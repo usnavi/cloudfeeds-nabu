@@ -78,7 +78,9 @@ object Preferences {
           Map[String, String]()
         else {
 
-          urls.getFields.flatMap( entry =>
+          urls.getFields
+            .filter( entry => regions.contains( entry.getKey ) )
+            .flatMap( entry =>
 
             isNotBlank( entry.getValue ) match {
 
