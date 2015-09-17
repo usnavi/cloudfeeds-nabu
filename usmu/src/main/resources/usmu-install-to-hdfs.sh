@@ -4,6 +4,9 @@
 # HDFS. Eventually this needs to be part of the deployment scripts (Ansible, etc).
 #
 
+# Hive config directory
+HIVE_CONFIG_DIR="/etc/hive/conf"
+
 # Need to have some starting assumption of where certain config files are
 USMU_ETC_DIR="/etc/cloudfeeds-nabu/usmu"
 COORDINATOR_PROPS=${USMU_ETC_DIR}/usmu-coordinator.properties
@@ -30,7 +33,7 @@ hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/usmu-coordinator.xml ${USMU_HDFS
 # Instead you can specify directory that contains workflow.xml file
 
 # copying files related to the FeedsImport workflow
-hadoop fs -copyFromLocal -f ${USMU_ETC_DIR}/hive-site.xml ${USMU_HDFS_DIR}/feedsImport/
+hadoop fs -copyFromLocal -f ${HIVE_CONFIG_DIR}/hive-site.xml ${USMU_HDFS_DIR}/feedsImport/
 hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/copy_to_entries.q ${USMU_HDFS_DIR}/feedsImport/
 hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/feedsImport-wf.xml ${USMU_HDFS_DIR}/feedsImport/workflow.xml
 
