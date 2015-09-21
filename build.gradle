@@ -170,9 +170,6 @@ artifacts {
 
     def tiamat_artifact = custom.parentProject + '-tiamat-' + project.version.minus('-SNAPSHOT') + '-1.noarch.rpm'
     archives file: file('tiamat/build/distributions/' + tiamat_artifact), name: tiamat_artifact, type: 'rpm', classifier: 'tiamat'
-
-    def tiamat_jar = custom.parentProject + '-tiamat-' + project.version.minus('-SNAPSHOT') + '-all.jar'
-    archives file: file('tiamat/build/libs/' + tiamat_jar), name: tiamat_jar, type: 'jar', classifier: 'tiamat'
 }
 
 uploadArchives {
