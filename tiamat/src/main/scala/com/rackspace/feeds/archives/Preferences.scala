@@ -37,9 +37,10 @@ object Preferences {
   /**
    * Create map entry of tenant id -> TenantPreferences
    *
-   * @param regions
-   * @param row
-   * @return
+   * @param regions - list of regions to be archived
+   * @param row - tenant's preferences data from hive
+   *
+   * @return - tenant id -> TenantPreferences
    */
   def tenantContainers(regions : Seq[String], row: Row): List[(String, TenantPrefs)] = {
 
@@ -57,10 +58,12 @@ object Preferences {
       case false => List()
       case true => {
 
+        // if a default container exists, get the default and create the map of region => container
         val containers = if ( isNotBlank( prefs.get( "default_archive_container_url" ) ) ) {
 
           val default_con = prefs.get("default_archive_container_url").getTextValue
 
+          // for only regions which are to be archived
           regions.map(dc =>
 
             if (urls == null)
@@ -74,11 +77,16 @@ object Preferences {
             }
           ).toMap[String, String]
         }
+        // if no default container, and no map of explicit region containers, return empty map.
         else if (urls == null)
           Map[String, String]()
+        // if no default container, create region => container map based on explicit region containers.
         else {
 
-          urls.getFields.flatMap( entry =>
+          urls.getFields
+            // only create entry for regions which will be archived
+            .filter( entry => regions.contains( entry.getKey ) )
+            .flatMap( entry =>
 
             isNotBlank( entry.getValue ) match {
 

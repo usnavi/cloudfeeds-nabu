@@ -93,6 +93,35 @@ class PreferencesTest extends FunSuite with MockitoSugar {
       """
         { "enabled": true,
           "data_format" : [ "JSON", "XML" ],
+          "archive_container_urls": {
+            "reg1" : "http://reg1",
+            "reg2" : "http://reg2",
+            "reg3" : "http://reg3"
+          }
+        }
+      """
+
+    val mockRow = createRow( "tid1", payload , "aid1", true)
+    val list = tenantContainers( Seq( "reg1", "reg2", "reg3" ), mockRow )
+
+    assert( list.size == 1 )
+
+    val prefs = list( 0 )._2
+
+    assert( prefs.formats == List( "JSON", "XML") )
+    assert( prefs.alternateId == "aid1" )
+    assert( prefs.containers.size == 3 )
+    assert( prefs.containers( "reg1") == "http://reg1" )
+    assert( prefs.containers( "reg2") == "http://reg2" )
+    assert( prefs.containers( "reg3") == "http://reg3" )
+  }
+
+  test( "Default, no containers specified" ) {
+
+    val payload =
+      """
+        { "enabled": true,
+          "data_format" : [ "JSON", "XML" ],
           "default_archive_container_url" : "http://defaultContainer",
           "archive_container_urls": {
           }
@@ -133,5 +162,63 @@ class PreferencesTest extends FunSuite with MockitoSugar {
     assert( prefs.formats == List( "JSON", "XML") )
     assert( prefs.alternateId == "aid1" )
     assert( prefs.containers.size == 0 )
+  }
+
+  test( "No default, only archive 'reg1'" ) {
+
+    val payload =
+      """
+        { "enabled": true,
+          "data_format" : [ "JSON", "XML" ],
+          "archive_container_urls": {
+             "reg1" : "http://reg1",
+             "reg2" : "http://reg2",
+             "reg3" : "http://reg3"
+          }
+        }
+      """
+
+    val mockRow = createRow( "tid1", payload , "aid1", true)
+    val list = tenantContainers( Seq( "reg1" ), mockRow )
+
+    assert( list.size == 1 )
+
+    val prefs = list( 0 )._2
+
+    assert( prefs.formats == List( "JSON", "XML") )
+    assert( prefs.alternateId == "aid1" )
+    assert( prefs.containers.size == 1 )
+    assert( prefs.containers( "reg1") == "http://reg1" )
+    assert( !prefs.containers.contains( "reg2") )
+    assert( !prefs.containers.contains( "reg3") )
+  }
+
+  test( "Default & containers, only archive 'reg1' & 'reg2' " ) {
+
+    val payload =
+      """
+        { "enabled": true,
+          "data_format" : [ "JSON", "XML" ],
+          "default_archive_container_url" : "http://defaultContainer",
+          "archive_container_urls": {
+             "reg2" : "http://reg2",
+             "reg3" : "http://reg3"
+          }
+        }
+      """
+
+    val mockRow = createRow( "tid1", payload , "aid1", true)
+    val list = tenantContainers( Seq( "reg1", "reg2" ), mockRow )
+
+    assert( list.size == 1 )
+
+    val prefs = list( 0 )._2
+
+    assert( prefs.formats == List( "JSON", "XML") )
+    assert( prefs.alternateId == "aid1" )
+    assert( prefs.containers.size == 2 )
+    assert( prefs.containers( "reg1") == "http://defaultContainer" )
+    assert( prefs.containers( "reg2") == "http://reg2" )
+    assert( !prefs.containers.contains( "reg3") )
   }
 }
