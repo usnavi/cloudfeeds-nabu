@@ -26,10 +26,10 @@ fi
 yesterday=`date -d "1 day ago" +%Y-%m-%d`
 
 # path to _SUCCESS file in hadoop filesystem
-success_file="/user/cloudfeeds/feeds_dump/$region/$yesterday/_SUCCESS"
+success_file="/user/cloudfeeds/feeds_dump/${region}/${yesterday}*/_SUCCESS"
 
 # test for file
-hadoop fs -test -e $success_file
+hadoop fs -test -e ${success_file}
 rc=$?
 
 if [ $rc -eq 0 ]; then
