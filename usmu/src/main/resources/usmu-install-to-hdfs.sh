@@ -33,7 +33,6 @@ hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/usmu-coordinator.xml ${USMU_HDFS
 # Instead you can specify directory that contains workflow.xml file
 
 # copying files related to the FeedsImport workflow
-hadoop fs -copyFromLocal -f ${HIVE_CONFIG_DIR}/hive-site.xml ${USMU_HDFS_DIR}/feedsImport/
 hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/copy_to_entries.q ${USMU_HDFS_DIR}/feedsImport/
 hadoop fs -copyFromLocal -f ${USMU_INSTALL_DIR}/feedsImport-wf.xml ${USMU_HDFS_DIR}/feedsImport/workflow.xml
 
