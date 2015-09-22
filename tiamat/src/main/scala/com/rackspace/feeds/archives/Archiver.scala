@@ -374,7 +374,7 @@ object Archiver {
       .contains( entry.tenantid ) &&
       feedSet.contains( entry.feed ) &&
       regionSet.contains( entry.region ) &&
-      !entry.categories.split( "|" ).contains( "cloudfeeds:private" )
+      !entry.categories.trim().split( "\\|" ).contains( "cloudfeeds:private" )
   }
 
   def toEntry( row : Row ) : Entry = {

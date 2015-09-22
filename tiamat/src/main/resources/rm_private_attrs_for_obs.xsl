@@ -28,18 +28,18 @@
 
     <!--For product: CloudServers -->
     <xsl:template xmlns:pf="http://docs.rackspace.com/event/servers/slice"
-                 match="pf:product[@version='1']/@*[some $x in ('rootPassword', 'options', 'huddleId', 'serverId', 'customerId', 'flavorId', 'sliceType', 'privateIp') satisfies $x eq local-name(.)]"
+                 match="pf:product[@version='1']/@*[some $x in ('customerId', 'flavorId', 'huddleId', 'options', 'privateIp', 'rootPassword', 'serverId', 'sliceType') satisfies $x eq local-name(.)]"
                  mode="rm_priv"/>
    <xsl:template xmlns:pf="http://docs.rackspace.com/event/servers/hostserver"
-                 match="pf:product[@version='1']/@*[some $x in ('coreID', 'huddleID', 'backstageURL') satisfies $x eq local-name(.)]"
+                 match="pf:product[@version='1']/@*[some $x in ('backstageURL', 'coreID', 'huddleID') satisfies $x eq local-name(.)]"
                  mode="rm_priv"/>
    <xsl:template xmlns:pf="http://docs.rackspace.com/event/servers/hostserver"
-                 match="pf:product[@version='2']/@*[some $x in ('coreID', 'huddleID', 'backstageURL') satisfies $x eq local-name(.)]"
+                 match="pf:product[@version='2']/@*[some $x in ('backstageURL', 'coreID', 'huddleID') satisfies $x eq local-name(.)]"
                  mode="rm_priv"/>
 
     <!--For product: Widget -->
     <xsl:template xmlns:pf="http://docs.rackspace.com/usage/widget"
-                 match="pf:product[@version='3']/@*[some $x in ('privateAttribute1', 'myAttribute', 'privateAttribute3') satisfies $x eq local-name(.)]"
+                 match="pf:product[@version='3']/@*[some $x in ('myAttribute', 'privateAttribute1', 'privateAttribute3') satisfies $x eq local-name(.)]"
                  mode="rm_priv"/>
    <xsl:template xmlns:pf="http://docs.rackspace.com/usage/widget"
                  match="pf:product[@version='3']/pf:metaData/@*[some $x in ('value') satisfies $x eq local-name(.)]"

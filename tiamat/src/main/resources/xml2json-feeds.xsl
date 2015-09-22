@@ -202,7 +202,7 @@
             <xsl:with-param name="ns"><xsl:value-of select="namespace-uri(.)"/></xsl:with-param>
         </xsl:call-template>    
         <xsl:choose>
-            <xsl:when test="cldfeeds:isRaxSchemaNode(local-name(), namespace-uri())">
+            <xsl:when test="cldfeeds:isRaxSchemaNode(.)">
                 <xsl:variable name="namespace" select="string(namespace-uri())" as="xs:string"/>
                 <xsl:variable name="version"   select="@version"                as="xs:string"/>
 
@@ -415,7 +415,7 @@
         <xsl:variable name="includeNodes" select="tokenize('feed entry event product error eventError', ' ')"/>
         <!-- except for these namespaces, e.g., event -->
         <xsl:variable name="excludeNS" 
-		      select="tokenize('http://schemas.dmtf.org/cloud/audit/1.0/event', ' ')"/>
+              select="tokenize('http://schemas.dmtf.org/cloud/audit/1.0/event', ' ')"/>
 
         <xsl:if test="exists(index-of($includeNodes, $localName)) 
             and not(exists(index-of($excludeNS, $ns)))">
@@ -424,21 +424,22 @@
     </xsl:template>
 
     <!--
-      Return true if the node is defined as a part of hte product schema.  This consists when the node matches the
-      included nodes & is not within the execluded namespaces.
+      Return true if the node is defined as a part of the product schema or if it is our core event
+      node. More importantly, it is assumed the node also has @version attribute.
     -->
     <xsl:function name="cldfeeds:isRaxSchemaNode" as="xs:boolean">
-        <xsl:param name="localName"/>
-        <xsl:param name="ns"/>
+        <xsl:param name="theNode" as="node()"/>
+
+        <xsl:variable name="ns"          select="namespace-uri($theNode)"/>
+        <xsl:variable name="localName"   select="local-name($theNode)"/>
+        <xsl:variable name="coreEventNs" select="'http://docs.rackspace.com/core/event'"/>
 
         <!-- rax schema nodes must have @version attribute -->
-        <xsl:variable name="includeNodes" select="tokenize('event product', ' ')"/>
-        <xsl:variable name="excludeNS"
-                      select="tokenize('http://schemas.dmtf.org/cloud/audit/1.0/event', ' ')"/>
-
         <xsl:choose>
-            <xsl:when test="exists(index-of($includeNodes, $localName))
-			  and not(exists(index-of($excludeNS, $ns)))">
+            <xsl:when test="exists($theNode/@version) and 
+                            (($localName = 'event'   and $ns = $coreEventNs) or
+                             ($localName = 'product' and local-name($theNode/..) = 'event' and
+                              namespace-uri($theNode/..) = $coreEventNs))">
                 <xsl:value-of select="true()"/>
             </xsl:when>
             <xsl:otherwise>

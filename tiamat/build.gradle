@@ -100,6 +100,7 @@ ospackage {
         into config_path
         include 'tiamat.conf'
         include 'log4j.properties'
+        include 'log4j-local.properties'
         // set permissions
         user app_user
         permissionGroup app_group
