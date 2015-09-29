@@ -160,11 +160,6 @@ class Options {
       throw new IllegalArgumentException( "Invalid command line options. One of --all-tenants (-a), --tenants (-t) or --test-run (-z) must be given. ")
     }
 
-    // if both options are used
-    if ( rc.feeds.nonEmpty && rc.isTestMode ) {
-      throw new IllegalArgumentException( "Invalid command line options.  Only one of the following can be used: --feeds (-f) or --test-run (-z) ")
-    }
-
     val rc1 = processDates(rc)
 
     val conf = getConf(rc1)
@@ -206,27 +201,44 @@ class Options {
 
     val feedsConf = rc3.getMossoFeeds() ++ rc3.getNastFeeds()
 
-    val feed_result = rc3.feeds.foldLeft(true)((result, x) =>
+    // if both options are used
+    if (rc3.isTestMode ) {
 
-      feedsConf.contains(x) match {
-
-        // yeah, println is lame, but easy
-        case false => {
-          System.out.println(s"${x} is not a recognized feed")
-          false
-        }
-        case true => result
+      if (  rc3.feeds.nonEmpty  && !(rc3.feeds.toSet subsetOf rc3.getTestFeeds().toSet) ) {
+        throw new IllegalArgumentException( "Invalid command line options.  When --feeds (-f) is used with --test-run (-z), -f should only mention the test feeds configured ")
       }
-    )
 
-    if (!feed_result)
-      throw new IllegalArgumentException("invalid feed")
+    } else {
+
+      // If its not test mode, make sure the feeds sent with -f flag are the ones
+      // listed under mosso-feeds and nast-feeds in conf file.
+
+      val feed_result = rc3.feeds.foldLeft(true)((result, x) =>
+
+        feedsConf.contains(x) match {
+
+          // yeah, println is lame, but easy
+          case false => {
+            System.out.println(s"${x} is not a recognized feed")
+            false
+          }
+          case true => result
+        }
+      )
+
+      if (!feed_result)
+        throw new IllegalArgumentException("invalid feed")
+    }
 
     val rc4 = rc3 match {
 
       case r: RunConfig if r.isTestMode => {
 
-        r.copy( feeds = r.getTestFeeds() )
+        r.copy( feeds = if (r.feeds.isEmpty) {
+          r.getTestFeeds()
+        } else {
+          r.feeds
+        })
       }
       case r: RunConfig if r.feeds.isEmpty => {
 
