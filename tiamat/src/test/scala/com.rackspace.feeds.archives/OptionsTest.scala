@@ -196,7 +196,7 @@ class OptionsTest extends FunSuite {
     }
   }
 
-  test( "run --test-run and --feeds" ) {
+  test( "run --test-run and --feeds with non-test feeds" ) {
 
     val options = new Options()
     intercept[IllegalArgumentException] {
@@ -205,6 +205,24 @@ class OptionsTest extends FunSuite {
 
   }
 
+  test( "run --test-run and --feeds with a mix of test feeds and non-test feeds" ) {
+
+    val options = new Options()
+    intercept[IllegalArgumentException] {
+      val config = options.parseOptions(Array("-c", getConf(), "--test-run", "--feeds", "feed1/events,functest1/events" ))
+    }
+
+  }
+
+  test( "run --test-run and --feeds with test feeds" ) {
+
+    val options = new Options()
+    val testFeedsCommandLine = Set("functest1/events")
+    val config = options.parseOptions(Array("-c", getConf(), "--test-run", "--feeds", testFeedsCommandLine.mkString(",") ))
+
+    assert( config.feeds.toSet &~ testFeedsCommandLine.toSet isEmpty )
+
+  }
 
   def getFeeds( config : RunConfig ) : Set[String] = {
 
