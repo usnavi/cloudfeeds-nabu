@@ -85,6 +85,15 @@ ospackage {
         fileMode 0755
     }
 
+    from('src/main/resources') {
+        into config_path
+        include '*.properties'
+        user app_user
+        permissionGroup app_group
+        fileMode 0644
+        fileType CONFIG | NOREPLACE
+    }
+
 }
 
 // task to create RPM
