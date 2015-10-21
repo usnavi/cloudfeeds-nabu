@@ -4,6 +4,8 @@
 -- This MUST match with how the Spark job is reading
 -- the table.
 
+SET hive.support.sql11.reserved.keywords=false;
+
 CREATE TABLE IF NOT EXISTS entries(
        id bigint,
        entryid string,

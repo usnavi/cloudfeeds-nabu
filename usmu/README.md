@@ -54,7 +54,3 @@ There will be several files installed in that configuration directory:
 1. usmu-coordinator.properties
 
    The semantic of the properties that can be configured are explained in that file.
-
-1. hive-site.xml
-
-   This is configuration of Hive in the Hadoop cluster, with which Usmu will interact

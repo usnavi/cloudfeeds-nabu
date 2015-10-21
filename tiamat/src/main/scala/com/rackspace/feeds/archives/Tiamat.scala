@@ -86,7 +86,10 @@ object Tiamat {
       }
     }
 
+    logger.info("Tiamat: Finished Archiving")
     writeLastRun( runConfig.lastSuccessPath )
+
+    logger.info("Tiamat: Finished writing last-run file")
   }
 
   def writeLastRun( path : String ) = {
@@ -99,6 +102,8 @@ object Tiamat {
   }
 
   def processErrors(errors: Iterable[TiamatError]) {
+    logger.info("tiamat: Processing errors")
+
     if (!errors.isEmpty) {
 
       errors.foreach(e => {

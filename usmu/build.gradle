@@ -88,12 +88,12 @@ ospackage {
     from('src/main/resources') {
         into config_path
         include '*.properties'
-        include 'hive-site.xml'
         user app_user
         permissionGroup app_group
         fileMode 0644
         fileType CONFIG | NOREPLACE
     }
+
 }
 
 // task to create RPM

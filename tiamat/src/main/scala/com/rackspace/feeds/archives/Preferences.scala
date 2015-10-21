@@ -1,5 +1,7 @@
 package com.rackspace.feeds.archives
 
+import java.sql.Timestamp
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
@@ -9,6 +11,8 @@ import org.codehaus.jackson.map.ObjectMapper
 import scala.util.{Success, Failure, Try}
 
 case class TenantPrefs( tenantId : String, alternateId : String, containers : Map[ String, String ], formats : List[String] )
+
+case class PreferenceRow(tenantId: String, payload: String, alternate_id: String, created: Timestamp, updated: Timestamp, enabled: Boolean)
 
 /**
  * Groups methods related with creating the TenantPrefs map based on the data from the Preferences db.
@@ -28,30 +32,43 @@ object Preferences {
     val regions = runConfig.regions
 
     hive.sql("select id, payload, alternate_id, created, updated, enabled from preferences")
-      .filter( (row) => tids.isEmpty match {
-      case true => true
-      case false => tids.contains(row.getString(0))
-    }).flatMap(tenantContainers( regions, _ ))
+      .map( toPreferenceRow )
+      .filter(pRow =>
+        tids.isEmpty match {
+          case true => true
+          case false => tids.contains(pRow.tenantId)
+        })
+      .flatMap(tenantContainers( regions, _ ))
+  }
+
+
+  def toPreferenceRow( row: Row): PreferenceRow = {
+
+    PreferenceRow(row.getString(0),
+      row.getString(1),
+      row.getString(2),
+      row( 3 ).asInstanceOf[Timestamp],
+      row( 4 ).asInstanceOf[Timestamp],
+      row.getBoolean(5))
   }
 
   /**
    * Create map entry of tenant id -> TenantPreferences
    *
    * @param regions - list of regions to be archived
-   * @param row - tenant's preferences data from hive
-   *
+   * @param pRow - tenant's preferences data from hive
    * @return - tenant id -> TenantPreferences
    */
-  def tenantContainers(regions : Seq[String], row: Row): List[(String, TenantPrefs)] = {
+  def tenantContainers(regions : Seq[String], pRow: PreferenceRow): List[(String, TenantPrefs)] = {
 
     import scala.collection.JavaConversions._
 
-    val tenantId = row.getString(0)
-    val prefs = (new ObjectMapper).readTree(row.getString(1))
+    val tenantId = pRow.tenantId
+    val prefs = (new ObjectMapper).readTree(pRow.payload)
     val formatsNode = prefs.get("data_format").getElements
     val formats = List() ++ formatsNode.map(_.getTextValue)
     val urls = prefs.get("archive_container_urls")
-    val enabled = row.getBoolean(5)
+    val enabled = pRow.enabled
 
     enabled match {
 
@@ -96,7 +113,7 @@ object Preferences {
           )
         }.toMap[String, String]
 
-        List((tenantId, TenantPrefs(tenantId, row.getString(2), containers, formats)))
+        List((tenantId, TenantPrefs(tenantId, pRow.alternate_id, containers, formats)))
       }
     }
   }

@@ -7,6 +7,7 @@
 SET hive.exec.dynamic.partition=true;
 SET hive.exec.dynamic.partition.mode=nonstrict;
 SET hive.support.concurrency=true;
+SET hive.support.sql11.reserved.keywords=false;
 
 -- Create an external table pointing to an agreed HDFS
 -- directory where Postgres DB dumb is written.
