@@ -57,12 +57,12 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     val resp = client.execute(post)
 
     val output = Source.fromInputStream(resp.getEntity.getContent).mkString
-    val body = (new ObjectMapper).readTree(output)
 
     resp.getStatusLine.getStatusCode match {
 
       case 200 => {
         logger.debug(s"Successfully impersonated user:[$user]")
+        val body = (new ObjectMapper).readTree(output)
         body.get("access").get("token").get("id").getTextValue
       }
       case _ => {
@@ -93,15 +93,17 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     val resp = client.execute(post)
 
     val output = Source.fromInputStream(resp.getEntity.getContent).mkString
-    val body = (new ObjectMapper).readTree(output)
 
     resp.getStatusLine.getStatusCode match {
 
       case 200 => {
+
         logger.debug("Successfully retrieved admin token")
+        val body = (new ObjectMapper).readTree(output)
         body.get("access").get("token").get("id").getTextValue
       }
       case _ => {
+
         val adminTokenErrorMsg: String = ADMIN_TOKEN(output)
         logger.error(s"Error getting token for admin: status code:[${resp.getStatusLine.getStatusCode}], message:[$adminTokenErrorMsg]")
         throw new RestException(resp.getStatusLine.getStatusCode,
@@ -146,12 +148,11 @@ class Identity( host : String, admin : String, apiKey : String, pw : String )  e
     val resp = client.execute(get, httpContext)
     val output = Source.fromInputStream(resp.getEntity.getContent).mkString
 
-    val body = (new ObjectMapper).readTree(output)
-
     resp.getStatusLine.getStatusCode match {
 
       case 200 => {
         logger.debug(s"Successfully retrieved admin for tenant:[$tenant] ")
+        val body = (new ObjectMapper).readTree(output)
         body.get("user").get("id").getTextValue
       }
       case _ => {
