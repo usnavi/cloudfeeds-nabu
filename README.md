@@ -1,5 +1,8 @@
 cloudfeeds-nabu
 ===============
+
+*This project is currently in sustaining mode as deployed within Rackspace.  For more information on how to support this in sustaining mode please see https://one.rackspace.com/display/cloudfeeds/Cloud+Feeds+Sustaining+Mode+Documentation+Start+Page.*
+
 [Nabu](http://en.wikipedia.org/wiki/Nabu) <a href="http://www.mesopotamia.co.uk/gods/explore/images/nabu_p.gif"><img src="http://www.mesopotamia.co.uk/gods/explore/images/nabu_p.gif" width="5%" height="5%" alt="Nabu"/></a> is the Babylonian god of writing and wisdom, and is the patron of [the scribes, librarians and archivists](http://en.wikipedia.org/wiki/Preservation_%28library_and_archival_science%29#Antecedents). [cloudfeeds-nabu](http://github.com/rackerlabs/cloudfeeds-nabu) is the code repository for the Cloud Feeds Archiving solution. 
 
 The Cloud Feeds Archiving solution deals with archiving cloud events that come through Rackspace Cloud Feeds' system. The whole solution is comprised of multiple sub components:
