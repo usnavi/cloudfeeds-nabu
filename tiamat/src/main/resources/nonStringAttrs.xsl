@@ -149,6 +149,9 @@
       <schema key="http://docs.rackspace.com/usage/maas" version="2">
          <attributes>product/@monitoringZones</attributes>
       </schema>
+      <schema key="http://docs.rackspace.com/usage/neutron/ip" version="1">
+         <attributes>product/@public</attributes>
+      </schema>
       <schema key="http://docs.rackspace.com/usage/neutron/ipbandwidth" version="1">
          <attributes>product/@bandwidthOut</attributes>
       </schema>
