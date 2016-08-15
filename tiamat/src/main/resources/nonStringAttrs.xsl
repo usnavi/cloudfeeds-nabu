@@ -143,8 +143,8 @@
       <schema key="http://docs.rackspace.com/usage/lbaas" version="1">
          <attributes>product/@avgConcurrentConnections,product/@avgConcurrentConnectionsSsl,product/@avgConcurrentConnectionsSum,product/@bandWidthIn,product/@bandWidthInSsl,product/@bandWidthOut,product/@bandWidthOutSsl,product/@hasSSLConnection,product/@numPolls,product/@numVips,product/@publicBandWidthInSum,product/@publicBandWidthOutSum</attributes>
       </schema>
-      <schema key="http://docs.rackspace.com/usage/lbaas/connections" version="2">
-         <attributes>product/@connections,product/@isSSL</attributes>
+      <schema key="http://docs.rackspace.com/usage/lbaas" version="2">
+         <attributes>product/@sslConnections product/@nonSslConnections product/@publicBandWidthOut</attributes>
       </schema>
       <schema key="http://docs.rackspace.com/usage/maas" version="1">
          <attributes>product/@monitoringZones</attributes>
